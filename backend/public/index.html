@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Study Buddy</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="auth-card">
+    <h1 class="logo">Study Buddy</h1>
+
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab active" data-target="login-form" role="tab" aria-selected="true">
+        Log In
+      </button>
+      <button type="button" class="tab" data-target="signup-form" role="tab" aria-selected="false">
+        Sign Up
+      </button>
+    </div>
+
+    <p class="message" id="message" role="alert"></p>
+
+    <form id="login-form" class="auth-form">
+      <label for="login-username">Username</label>
+      <input id="login-username" name="username" type="text" autocomplete="username" required />
+
+      <label for="login-password">Password</label>
+      <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+
+      <button type="submit">Log In</button>
+    </form>
+
+    <form id="signup-form" class="auth-form hidden">
+      <label for="signup-username">Username</label>
+      <input id="signup-username" name="username" type="text" autocomplete="username" required />
+
+      <label for="signup-email">Email</label>
+      <input id="signup-email" name="email" type="email" autocomplete="email" required />
+
+      <label for="signup-password">Password</label>
+      <input id="signup-password" name="password" type="password" autocomplete="new-password" required />
+
+      <button type="submit">Create Account</button>
+    </form>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
