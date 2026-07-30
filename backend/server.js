@@ -5,7 +5,7 @@ let { Pool } = require("pg");
 
 let app = express();
 let port = process.env.PORT || 3000;
-let hostname = "localhost";
+let hostname = "0.0.0.0";
 
 let pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -28,7 +28,7 @@ app.post("/signup", (req, res) => {
   }
 
   bcrypt.hash(password, 10, (err, hash) => {
-    if (err) {
+    if (err) {i
       console.log(err);
       res.status(500).json({ error: "something went wrong" });
       return;
