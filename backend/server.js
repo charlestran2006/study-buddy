@@ -28,7 +28,7 @@ app.post("/signup", (req, res) => {
   }
 
   bcrypt.hash(password, 10, (err, hash) => {
-    if (err) {i
+    if (err) {
       console.log(err);
       res.status(500).json({ error: "something went wrong" });
       return;
