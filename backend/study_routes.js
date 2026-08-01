@@ -18,7 +18,27 @@ router.get('/test', requireAuth, (req, res) => {
 
 router.get('/sets/:id/study', requireAuth, (req, res) => {
     const { id } = req.params;
-    res.json({ message: `Fetching flashcards for set ${id}...` });
+    
+    const query = `
+        SELECT t.* 
+        FROM terms t
+        JOIN sets s ON t.set_id = s.id
+        WHERE t.set_id = $1 AND s.user_id = $2
+        ORDER BY t.position;
+    `;
+
+    pool.query(query, [id, req.session.userId], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: "database query error" });
+        }
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "set not found or access denied" });
+        }
+
+        res.status(200).json(result.rows);
+    });
 });
 
 module.exports = router;
