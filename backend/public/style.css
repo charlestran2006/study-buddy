@@ -5,12 +5,20 @@
 body {
   margin: 0;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background: #f4f5f7;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: #1f2430;
+}
+
+.hidden {
+  display: none !important;
+}
+
+#auth-view {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .auth-card {
@@ -68,10 +76,6 @@ body {
   flex-direction: column;
 }
 
-.auth-form.hidden {
-  display: none;
-}
-
 .auth-form label {
   font-size: 0.85rem;
   margin-bottom: 4px;
@@ -92,6 +96,34 @@ body {
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
 }
 
+.role-picker {
+  display: flex;
+  gap: 16px;
+  border: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+
+.role-picker legend {
+  font-size: 0.85rem;
+  color: #374151;
+  padding: 0;
+  margin-bottom: 4px;
+}
+
+.role-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  color: #1f2430;
+  cursor: pointer;
+}
+
+.role-option input {
+  margin: 0;
+}
+
 .auth-form button {
   padding: 10px 12px;
   border: none;
@@ -109,4 +141,181 @@ body {
 .auth-form button:disabled {
   background: #a5a6f6;
   cursor: not-allowed;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e4e9;
+}
+
+.dashboard-header .logo {
+  margin: 0;
+}
+
+.dashboard-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+#logout-button {
+  padding: 8px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+#logout-button:hover {
+  background: #f4f5f7;
+}
+
+#dashboard-message {
+  margin: 16px 32px 0;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 24px 32px 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.panel {
+  min-width: 0;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  padding: 24px;
+}
+
+.panel h2 {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+}
+
+.classroom-list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.classroom-item {
+  border: 1px solid #e2e4e9;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.classroom-item .classroom-name {
+  font-weight: 600;
+}
+
+.classroom-item .classroom-meta {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.classroom-item .join-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: #f4f5f7;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.empty-state {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.panel-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.panel-form label {
+  font-size: 0.85rem;
+  color: #374151;
+  margin-top: 8px;
+}
+
+.panel-form input,
+.panel-form textarea,
+.panel-form select {
+  padding: 9px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.panel-form input:focus,
+.panel-form textarea:focus,
+.panel-form select:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.panel-form button[type="submit"] {
+  margin-top: 16px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #4f46e5;
+  color: #ffffff;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.panel-form button[type="submit"]:hover {
+  background: #4338ca;
+}
+
+#add-term-row {
+  margin-top: 10px;
+  align-self: flex-start;
+  padding: 6px 10px;
+  border: 1px dashed #a5a6f6;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #4f46e5;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.term-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  min-width: 0;
+}
+
+.term-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.term-row button {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0 4px;
 }
