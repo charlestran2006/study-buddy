@@ -7,43 +7,139 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="auth-card">
-    <h1 class="logo">Study Buddy</h1>
+  <div id="auth-view">
+    <main class="auth-card">
+      <h1 class="logo">Study Buddy</h1>
 
-    <div class="tabs" role="tablist">
-      <button type="button" class="tab active" data-target="login-form" role="tab" aria-selected="true">
-        Log In
-      </button>
-      <button type="button" class="tab" data-target="signup-form" role="tab" aria-selected="false">
-        Sign Up
-      </button>
-    </div>
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab active" data-target="login-form" role="tab" aria-selected="true">
+          Log In
+        </button>
+        <button type="button" class="tab" data-target="signup-form" role="tab" aria-selected="false">
+          Sign Up
+        </button>
+      </div>
 
-    <p class="message" id="message" role="alert"></p>
+      <p class="message" id="message" role="alert"></p>
 
-    <form id="login-form" class="auth-form">
-      <label for="login-username">Username</label>
-      <input id="login-username" name="username" type="text" autocomplete="username" required />
+      <form id="login-form" class="auth-form">
+        <label for="login-username">Username</label>
+        <input id="login-username" name="username" type="text" autocomplete="username" required />
 
-      <label for="login-password">Password</label>
-      <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+        <label for="login-password">Password</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required />
 
-      <button type="submit">Log In</button>
-    </form>
+        <button type="submit">Log In</button>
+      </form>
 
-    <form id="signup-form" class="auth-form hidden">
-      <label for="signup-username">Username</label>
-      <input id="signup-username" name="username" type="text" autocomplete="username" required />
+      <form id="signup-form" class="auth-form hidden">
+        <label for="signup-username">Username</label>
+        <input id="signup-username" name="username" type="text" autocomplete="username" required />
 
-      <label for="signup-email">Email</label>
-      <input id="signup-email" name="email" type="email" autocomplete="email" required />
+        <label for="signup-email">Email</label>
+        <input id="signup-email" name="email" type="email" autocomplete="email" required />
 
-      <label for="signup-password">Password</label>
-      <input id="signup-password" name="password" type="password" autocomplete="new-password" required />
+        <label for="signup-password">Password</label>
+        <input id="signup-password" name="password" type="password" autocomplete="new-password" required />
 
-      <button type="submit">Create Account</button>
-    </form>
-  </main>
+        <fieldset class="role-picker">
+          <legend>I am a</legend>
+          <label class="role-option">
+            <input type="radio" name="role" value="student" checked />
+            Student
+          </label>
+          <label class="role-option">
+            <input type="radio" name="role" value="professor" />
+            Professor
+          </label>
+        </fieldset>
+
+        <button type="submit">Create Account</button>
+      </form>
+    </main>
+  </div>
+
+  <div id="dashboard-view" class="hidden">
+    <header class="dashboard-header">
+      <h1 class="logo">Study Buddy</h1>
+      <div class="dashboard-header-right">
+        <span id="dashboard-username"></span>
+        <button type="button" id="logout-button">Log Out</button>
+      </div>
+    </header>
+
+    <p class="message" id="dashboard-message" role="alert"></p>
+
+    <main class="dashboard-grid">
+      <section class="panel">
+        <h2>Your Classrooms</h2>
+        <ul id="classroom-list" class="classroom-list"></ul>
+
+        <form id="create-classroom-form" class="panel-form">
+          <label for="classroom-name">Classroom name</label>
+          <input id="classroom-name" name="name" type="text" required />
+          <button type="submit">Create Classroom</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Create a Study Set</h2>
+        <form id="create-set-form" class="panel-form">
+          <label for="set-title">Title</label>
+          <input id="set-title" name="title" type="text" required />
+
+          <label for="set-description">Description</label>
+          <textarea id="set-description" name="description" rows="2"></textarea>
+
+          <div id="term-rows" class="term-rows"></div>
+          <button type="button" id="add-term-row">+ Add Term</button>
+
+          <button type="submit">Create Study Set</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Assign a Study Set</h2>
+        <form id="assign-set-form" class="panel-form">
+          <label for="assign-set-select">Study set</label>
+          <select id="assign-set-select" name="set_id" required></select>
+
+          <label for="assign-classroom-select">Classroom</label>
+          <select id="assign-classroom-select" name="classroom_id" required></select>
+
+          <button type="submit">Assign</button>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <div id="student-dashboard-view" class="hidden">
+    <header class="dashboard-header">
+      <h1 class="logo">Study Buddy</h1>
+      <div class="dashboard-header-right">
+        <span id="student-dashboard-username"></span>
+        <button type="button" id="student-logout-button">Log Out</button>
+      </div>
+    </header>
+
+    <p class="message" id="student-dashboard-message" role="alert"></p>
+
+    <main class="dashboard-grid">
+      <section class="panel">
+        <h2>Your Classrooms</h2>
+        <ul id="my-classroom-list" class="classroom-list"></ul>
+      </section>
+
+      <section class="panel">
+        <h2>Join a Classroom</h2>
+        <form id="join-classroom-form" class="panel-form">
+          <label for="join-code">Join code</label>
+          <input id="join-code" name="code" type="text" required />
+          <button type="submit">Join</button>
+        </form>
+      </section>
+    </main>
+  </div>
 
   <script src="app.js"></script>
 </body>
