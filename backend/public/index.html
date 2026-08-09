@@ -110,6 +110,23 @@
           <button type="submit">Assign</button>
         </form>
       </section>
+
+      <section class="panel">
+        <h2>Start a Game</h2>
+        <form id="create-game-form" class="panel-form">
+          <label for="game-set-select">Study set</label>
+          <select id="game-set-select" name="set_id" required></select>
+
+          <button type="submit">Start Game</button>
+        </form>
+
+        <div id="active-game" class="hidden">
+          <p class="game-join-code-line">
+            Join code <span id="game-join-code" class="join-code"></span>
+          </p>
+          <p id="game-player-count" class="empty-state"></p>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -137,6 +154,16 @@
           <input id="join-code" name="code" type="text" required />
           <button type="submit">Join</button>
         </form>
+      </section>
+
+      <section class="panel">
+        <h2>Join a Game</h2>
+        <form id="join-game-form" class="panel-form">
+          <label for="game-code">Join code</label>
+          <input id="game-code" name="code" type="text" required />
+          <button type="submit">Join Game</button>
+        </form>
+        <p id="game-status-message" class="empty-state"></p>
       </section>
     </main>
   </div>

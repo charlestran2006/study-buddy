@@ -136,6 +136,8 @@ async function logout() {
   } catch (err) {
     // ignore, clear the UI regardless
   }
+  stopGamePolling();
+  activeGame.classList.add("hidden");
   dashboardView.classList.add("hidden");
   studentDashboardView.classList.add("hidden");
   authView.classList.remove("hidden");
@@ -208,6 +210,7 @@ document.getElementById("create-classroom-form").addEventListener("submit", asyn
 
 let termRows = document.getElementById("term-rows");
 let assignSetSelect = document.getElementById("assign-set-select");
+let gameSetSelect = document.getElementById("game-set-select");
 
 function addTermRow() {
   let row = document.createElement("div");
@@ -236,12 +239,16 @@ async function loadSets() {
 
 function renderSets(sets) {
   assignSetSelect.innerHTML = "";
+  gameSetSelect.innerHTML = "";
 
   sets.forEach((set) => {
     let option = document.createElement("option");
     option.value = set.id;
     option.textContent = set.title;
     assignSetSelect.appendChild(option);
+
+    let gameOption = option.cloneNode(true);
+    gameSetSelect.appendChild(gameOption);
   });
 }
 
@@ -304,6 +311,55 @@ document.getElementById("assign-set-form").addEventListener("submit", async (eve
   }
 });
 
+// --- Games (professor) ---
+
+let activeGame = document.getElementById("active-game");
+let gameJoinCode = document.getElementById("game-join-code");
+let gamePlayerCount = document.getElementById("game-player-count");
+let gamePollInterval = null;
+
+function stopGamePolling() {
+  if (gamePollInterval) {
+    clearInterval(gamePollInterval);
+    gamePollInterval = null;
+  }
+}
+
+function pollGame(gameId) {
+  stopGamePolling();
+
+  let poll = async () => {
+    try {
+      let game = await apiRequest(`/games/${gameId}`);
+      gamePlayerCount.textContent = `${game.player_count} player${game.player_count === 1 ? "" : "s"} joined`;
+    } catch (err) {
+      stopGamePolling();
+    }
+  };
+
+  poll();
+  gamePollInterval = setInterval(poll, 3000);
+}
+
+document.getElementById("create-game-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  let form = event.target;
+  let button = form.querySelector("button");
+  button.disabled = true;
+
+  try {
+    let game = await submitForm("/games", { set_id: form.set_id.value });
+    gameJoinCode.textContent = game.join_code;
+    activeGame.classList.remove("hidden");
+    setDashboardMessage("Game started.", true);
+    pollGame(game.id);
+  } catch (err) {
+    setDashboardMessage(err.message);
+  } finally {
+    button.disabled = false;
+  }
+});
+
 // --- Student: my classrooms ---
 
 let myClassroomList = document.getElementById("my-classroom-list");
@@ -349,6 +405,27 @@ document.getElementById("join-classroom-form").addEventListener("submit", async 
     loadMyClassrooms();
   } catch (err) {
     setStudentDashboardMessage(err.message);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+// --- Games (student) ---
+
+let gameStatusMessage = document.getElementById("game-status-message");
+
+document.getElementById("join-game-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  let form = event.target;
+  let button = form.querySelector("button");
+  button.disabled = true;
+
+  try {
+    await submitForm("/games/join", { code: form.code.value });
+    form.reset();
+    gameStatusMessage.textContent = "Joined! Waiting for the professor to start.";
+  } catch (err) {
+    gameStatusMessage.textContent = err.message;
   } finally {
     button.disabled = false;
   }
