@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { pool } = require('./server'); 
+const { pool } = require('./db');
 
 
 function requireAuth(req, res, next) {
@@ -38,6 +38,46 @@ router.get('/sets/:id/study', requireAuth, (req, res) => {
         }
 
         res.status(200).json(result.rows);
+    });
+});
+
+
+router.get('/classrooms/:classroomId/assignment', requireAuth, (req, res) => {
+    const { classroomId } = req.params;
+
+    const query = `
+        SELECT t.id, t.term, t.definition, t.position, s.title, s.description
+        FROM assignments a
+        JOIN sets s ON a.set_id = s.id
+        JOIN terms t ON t.set_id = s.id
+        JOIN classroom_students cs ON cs.classroom_id = a.classroom_id
+        WHERE a.classroom_id = $1 AND cs.student_id = $2
+        ORDER BY t.position ASC;
+    `;
+
+    pool.query(query, [classroomId, req.session.userId], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: "database query error" });
+        }
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "assignment not found or unauthorized" });
+        }
+
+        const firstRow = result.rows[0];
+        const studySet = {
+            title: firstRow.title,
+            description: firstRow.description,
+            terms: result.rows.map(row => ({
+                id: row.id,
+                term: row.term,
+                definition: row.definition,
+                position: row.position
+            }))
+        };
+
+        res.status(200).json(studySet);
     });
 });
 
