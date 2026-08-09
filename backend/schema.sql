@@ -65,3 +65,21 @@ CREATE TABLE assignments (
   assigned_at TIMESTAMP DEFAULT NOW(),
   UNIQUE (set_id, classroom_id)
 );
+
+CREATE TABLE live_sessions (
+  id SERIAL PRIMARY KEY,
+  classroom_id INTEGER REFERENCES classrooms(id),
+  set_id INTEGER REFERENCES sets(id),
+  current_term_index INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  started_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE student_responses (
+  id SERIAL PRIMARY KEY,
+  session_id INTEGER REFERENCES live_sessions(id),
+  student_id INTEGER REFERENCES users(id),
+  term_id INTEGER REFERENCES terms(id),
+  is_correct BOOLEAN NOT NULL,
+  answered_at TIMESTAMP DEFAULT NOW()
+);
