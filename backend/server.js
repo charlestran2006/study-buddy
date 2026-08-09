@@ -486,6 +486,130 @@ app.post("/assignments", requireAuth, requireProfessor, (req, res) => {
   );
 });
 
+app.post("/games", requireAuth, requireProfessor, (req, res) => {
+  let setId = req.body.set_id;
+
+  if (!setId) {
+    res.status(400).json({ error: "missing fields" });
+    return;
+  }
+
+  pool.query(
+    "SELECT id FROM sets WHERE id = $1 AND user_id = $2",
+    [setId, req.session.userId],
+    (err, setResult) => {
+      if (err) {
+        console.log(err);
+        res.status(500).json({ error: "something went wrong" });
+        return;
+      }
+
+      if (setResult.rows.length === 0) {
+        res.status(404).json({ error: "study set not found" });
+        return;
+      }
+
+      let joinCode = generateJoinCode();
+
+      pool.query(
+        "INSERT INTO games (set_id, professor_id, join_code) VALUES ($1, $2, $3) RETURNING id, set_id, join_code, status, current_term_index, created_at",
+        [setId, req.session.userId, joinCode],
+        (err, result) => {
+          if (err) {
+            console.log(err);
+            res.status(400).json({ error: "could not create game" });
+            return;
+          }
+
+          res.status(200).json(result.rows[0]);
+        }
+      );
+    }
+  );
+});
+
+app.post("/games/join", requireAuth, requireStudent, (req, res) => {
+  let code = req.body.code;
+
+  if (!code) {
+    res.status(400).json({ error: "missing fields" });
+    return;
+  }
+
+  pool.query(
+    "SELECT id, status FROM games WHERE join_code = $1",
+    [code.toUpperCase()],
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(500).json({ error: "something went wrong" });
+        return;
+      }
+
+      if (result.rows.length === 0) {
+        res.status(404).json({ error: "invalid join code" });
+        return;
+      }
+
+      let game = result.rows[0];
+
+      pool.query(
+        "INSERT INTO game_players (game_id, student_id) VALUES ($1, $2) RETURNING id",
+        [game.id, req.session.userId],
+        (err) => {
+          if (err) {
+            console.log(err);
+            res.status(400).json({ error: "already joined this game" });
+            return;
+          }
+
+          res.status(200).json(game);
+        }
+      );
+    }
+  );
+});
+
+app.get("/games/:id", requireAuth, requireProfessor, (req, res) => {
+  let gameId = req.params.id;
+
+  pool.query(
+    "SELECT id, set_id, join_code, status, current_term_index, created_at FROM games WHERE id = $1 AND professor_id = $2",
+    [gameId, req.session.userId],
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(500).json({ error: "something went wrong" });
+        return;
+      }
+
+      if (result.rows.length === 0) {
+        res.status(404).json({ error: "game not found" });
+        return;
+      }
+
+      let game = result.rows[0];
+
+      pool.query(
+        "SELECT COUNT(*)::int AS player_count FROM game_players WHERE game_id = $1",
+        [gameId],
+        (err, countResult) => {
+          if (err) {
+            console.log(err);
+            res.status(500).json({ error: "something went wrong" });
+            return;
+          }
+
+          res.status(200).json({
+            ...game,
+            player_count: countResult.rows[0].player_count,
+          });
+        }
+      );
+    }
+  );
+});
+
 app.listen(port, hostname, () => {
   console.log(`http://${hostname}:${port}`);
 });
