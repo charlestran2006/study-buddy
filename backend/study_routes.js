@@ -81,4 +81,24 @@ router.get('/classrooms/:classroomId/assignment', requireAuth, (req, res) => {
     });
 });
 
+
+router.post('/sessions/start', requireAuth, (req, res) => {
+    const { classroom_id, set_id } = req.body;
+
+    const query = `
+        INSERT INTO live_sessions (classroom_id, set_id, current_term_index, is_active)
+        VALUES ($1, $2, 0, TRUE)
+        RETURNING id, classroom_id, set_id, current_term_index, is_active, started_at;
+    `;
+
+    pool.query(query, [classroom_id, set_id], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: "database query error" });
+        }
+
+        res.status(201).json(result.rows[0]);
+    });
+});
+
 module.exports = router;
