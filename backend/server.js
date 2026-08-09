@@ -2,20 +2,14 @@ require("dotenv").config();
 let express = require("express");
 let bcrypt = require("bcrypt");
 let session = require("express-session");
-let { Pool } = require("pg");
 let path = require("path");
 let crypto = require("crypto");
+let { pool } = require("./db");
 const studyRoutes = require('./study_routes');
 
 let app = express();
 let port = process.env.PORT || 3000;
 let hostname = "0.0.0.0";
-
-let pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-module.exports = { pool };
 
 app.use(express.json());
 app.use(
