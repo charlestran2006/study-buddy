@@ -2,9 +2,9 @@ require("dotenv").config();
 let express = require("express");
 let bcrypt = require("bcrypt");
 let session = require("express-session");
-let { Pool } = require("pg");
 let path = require("path");
 let crypto = require("crypto");
+let { pool } = require("./db");
 const studyRoutes = require('./study_routes');
 
 let app = express();
