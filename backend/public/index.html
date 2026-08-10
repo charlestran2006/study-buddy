@@ -110,6 +110,63 @@
           <button type="submit">Assign</button>
         </form>
       </section>
+
+      <section class="panel">
+        <h2>Host a Live Game</h2>
+        <form id="create-game-form" class="panel-form">
+          <label for="game-set-select">Study set</label>
+          <select id="game-set-select" name="set_id" required></select>
+
+          <label for="game-classroom-select">Classroom</label>
+          <select id="game-classroom-select" name="classroom_id" required></select>
+
+          <button type="submit">Create Game</button>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <div id="game-view" class="hidden">
+    <header class="dashboard-header">
+      <h1 class="logo">Study Buddy</h1>
+      <div class="dashboard-header-right">
+        <button type="button" id="leave-game-button">Back to Dashboard</button>
+      </div>
+    </header>
+
+    <main class="game-main">
+      <section class="panel game-panel">
+        <div class="game-status-row">
+          <span id="game-status-badge" class="game-status-badge">waiting</span>
+          <span id="game-join-code-display" class="join-code hidden"></span>
+          <span id="game-timer" class="game-timer hidden"></span>
+        </div>
+
+        <p class="message" id="game-message" role="alert"></p>
+
+        <div id="game-professor-controls" class="game-controls hidden">
+          <button type="button" id="start-game-button">Start Game</button>
+          <button type="button" id="end-game-button">End Game</button>
+        </div>
+
+        <div id="game-question" class="game-question hidden">
+          <h2 id="game-term-front"></h2>
+          <form id="game-answer-form" class="panel-form">
+            <label for="game-answer-input">Your answer</label>
+            <input id="game-answer-input" name="answer" type="text" autocomplete="off" required />
+            <button type="submit">Submit Answer</button>
+          </form>
+          <p class="message" id="game-answer-message" role="alert"></p>
+        </div>
+
+        <div id="game-waiting-message" class="empty-state hidden">Waiting for the professor to start the game&hellip;</div>
+        <div id="game-finished-message" class="empty-state hidden">Game over!</div>
+      </section>
+
+      <section class="panel">
+        <h2>Players</h2>
+        <ol id="game-player-list" class="classroom-list"></ol>
+      </section>
     </main>
   </div>
 
@@ -136,6 +193,15 @@
           <label for="join-code">Join code</label>
           <input id="join-code" name="code" type="text" required />
           <button type="submit">Join</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Join a Live Game</h2>
+        <form id="join-game-form" class="panel-form">
+          <label for="join-game-code">Game code</label>
+          <input id="join-game-code" name="code" type="text" required />
+          <button type="submit">Join Game</button>
         </form>
       </section>
     </main>
