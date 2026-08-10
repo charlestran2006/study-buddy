@@ -65,3 +65,25 @@ CREATE TABLE assignments (
   assigned_at TIMESTAMP DEFAULT NOW(),
   UNIQUE (set_id, classroom_id)
 );
+
+CREATE TABLE games (
+  id SERIAL PRIMARY KEY,
+  classroom_id INTEGER REFERENCES classrooms(id),
+  set_id INTEGER REFERENCES sets(id),
+  professor_id INTEGER REFERENCES users(id),
+  join_code TEXT UNIQUE NOT NULL,
+  status TEXT NOT NULL DEFAULT 'waiting' CHECK (status IN ('waiting', 'active', 'finished')),
+  current_term_index INTEGER NOT NULL DEFAULT 0,
+  current_term_started_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE game_players (
+  id SERIAL PRIMARY KEY,
+  game_id INTEGER REFERENCES games(id),
+  student_id INTEGER REFERENCES users(id),
+  score INTEGER NOT NULL DEFAULT 0,
+  last_answered_term_index INTEGER,
+  joined_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE (game_id, student_id)
+);
