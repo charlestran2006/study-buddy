@@ -319,3 +319,118 @@ body {
   line-height: 1;
   padding: 0 4px;
 }
+
+.game-main {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  padding: 24px 32px 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (max-width: 720px) {
+  .game-main {
+    grid-template-columns: 1fr;
+  }
+}
+
+.game-panel {
+  min-width: 0;
+}
+
+.game-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.game-status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f4f5f7;
+  color: #374151;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.game-status-badge.active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.game-status-badge.finished {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.game-timer {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #4f46e5;
+}
+
+.game-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.game-controls button {
+  padding: 9px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #ffffff;
+}
+
+#start-game-button {
+  background: #16a34a;
+}
+
+#start-game-button:hover {
+  background: #15803d;
+}
+
+#end-game-button {
+  background: #dc2626;
+}
+
+#end-game-button:hover {
+  background: #b91c1c;
+}
+
+.game-question h2 {
+  margin: 0 0 16px;
+  font-size: 1.6rem;
+}
+
+#leave-game-button {
+  padding: 8px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+#leave-game-button:hover {
+  background: #f4f5f7;
+}
+
+.player-item {
+  display: flex;
+  justify-content: space-between;
+  border: 1px solid #e2e4e9;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.player-item .player-score {
+  font-weight: 600;
+  color: #4f46e5;
+}
