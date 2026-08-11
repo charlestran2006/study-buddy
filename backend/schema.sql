@@ -68,6 +68,7 @@ CREATE TABLE assignments (
 
 CREATE TABLE games (
   id SERIAL PRIMARY KEY,
+  classroom_id INTEGER REFERENCES classrooms(id),
   set_id INTEGER REFERENCES sets(id),
   professor_id INTEGER REFERENCES users(id),
   join_code TEXT UNIQUE NOT NULL,
