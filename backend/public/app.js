@@ -163,9 +163,12 @@ async function loadClassrooms() {
   }
 }
 
+let gameClassroomSelect = document.getElementById("game-classroom-select");
+
 function renderClassrooms(classrooms) {
   classroomList.innerHTML = "";
   assignClassroomSelect.innerHTML = "";
+  gameClassroomSelect.innerHTML = "";
 
   if (classrooms.length === 0) {
     classroomList.innerHTML = '<li class="empty-state">No classrooms yet.</li>';
@@ -187,6 +190,11 @@ function renderClassrooms(classrooms) {
     option.value = classroom.id;
     option.textContent = classroom.name;
     assignClassroomSelect.appendChild(option);
+
+    let gameOption = document.createElement("option");
+    gameOption.value = classroom.id;
+    gameOption.textContent = classroom.name;
+    gameClassroomSelect.appendChild(gameOption);
   });
 }
 
@@ -238,6 +246,8 @@ async function loadSets() {
     setDashboardMessage(err.message);
   }
 }
+
+let gameSetSelect = document.getElementById("game-set-select");
 
 function renderSets(sets) {
   assignSetSelect.innerHTML = "";
@@ -676,3 +686,213 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+
+// --- Live game ---
+
+let gameView = document.getElementById("game-view");
+let gameMessage = document.getElementById("game-message");
+let gameStatusBadge = document.getElementById("game-status-badge");
+let gameJoinCodeDisplay = document.getElementById("game-join-code-display");
+let gameTimer = document.getElementById("game-timer");
+let gameProfessorControls = document.getElementById("game-professor-controls");
+let gameQuestion = document.getElementById("game-question");
+let gameTermFront = document.getElementById("game-term-front");
+let gameAnswerForm = document.getElementById("game-answer-form");
+let gameAnswerMessage = document.getElementById("game-answer-message");
+let gameWaitingMessage = document.getElementById("game-waiting-message");
+let gameFinishedMessage = document.getElementById("game-finished-message");
+let gamePlayerList = document.getElementById("game-player-list");
+
+let currentGameId = null;
+let currentGameRole = null;
+let currentGameJoinCode = null;
+let gamePollTimer = null;
+let lastAnsweredTermIndex = null;
+let currentTermIndex = null;
+
+function setGameMessage(text) {
+  gameMessage.textContent = text;
+}
+
+function enterGameView(gameId, role, joinCode) {
+  currentGameId = gameId;
+  currentGameRole = role;
+  currentGameJoinCode = joinCode || null;
+  lastAnsweredTermIndex = null;
+
+  dashboardView.classList.add("hidden");
+  studentDashboardView.classList.add("hidden");
+  gameView.classList.remove("hidden");
+
+  gameProfessorControls.classList.toggle("hidden", role !== "professor");
+  gameAnswerForm.reset();
+  setGameMessage("");
+  gameAnswerMessage.textContent = "";
+
+  pollGame();
+  gamePollTimer = setInterval(pollGame, 2000);
+}
+
+function leaveGameView() {
+  if (gamePollTimer) {
+    clearInterval(gamePollTimer);
+    gamePollTimer = null;
+  }
+
+  gameView.classList.add("hidden");
+
+  if (currentGameRole === "professor") {
+    dashboardView.classList.remove("hidden");
+  } else {
+    studentDashboardView.classList.remove("hidden");
+  }
+
+  currentGameId = null;
+  currentGameRole = null;
+}
+
+document.getElementById("leave-game-button").addEventListener("click", leaveGameView);
+
+async function pollGame() {
+  if (!currentGameId) return;
+
+  try {
+    let game = await apiRequest(`/games/${currentGameId}`);
+    renderGame(game);
+  } catch (err) {
+    setGameMessage(err.message);
+  }
+}
+
+function renderGame(game) {
+  gameStatusBadge.textContent = game.status;
+  gameStatusBadge.className = `game-status-badge ${game.status}`;
+
+  if (currentGameJoinCode) {
+    gameJoinCodeDisplay.textContent = `code ${currentGameJoinCode}`;
+    gameJoinCodeDisplay.classList.remove("hidden");
+  }
+
+  gameQuestion.classList.add("hidden");
+  gameWaitingMessage.classList.add("hidden");
+  gameFinishedMessage.classList.add("hidden");
+  gameTimer.classList.add("hidden");
+
+  if (game.status === "waiting") {
+    gameWaitingMessage.classList.remove("hidden");
+  } else if (game.status === "active" && game.current_term) {
+    gameTermFront.textContent = game.current_term.term;
+    gameQuestion.classList.remove("hidden");
+    gameTimer.textContent = `${game.time_remaining}s`;
+    gameTimer.classList.remove("hidden");
+    currentTermIndex = game.current_term_index;
+
+    if (game.current_term_index !== lastAnsweredTermIndex) {
+      gameAnswerForm.reset();
+      gameAnswerMessage.textContent = "";
+    }
+  } else if (game.status === "finished") {
+    gameFinishedMessage.classList.remove("hidden");
+  }
+
+  renderGamePlayers(game.players);
+}
+
+function renderGamePlayers(players) {
+  gamePlayerList.innerHTML = "";
+
+  if (!players || players.length === 0) {
+    gamePlayerList.innerHTML = '<li class="empty-state">No players yet.</li>';
+    return;
+  }
+
+  players.forEach((player) => {
+    let item = document.createElement("li");
+    item.className = "player-item";
+    item.innerHTML = `
+      <span>${escapeHtml(player.username)}</span>
+      <span class="player-score">${player.score}</span>
+    `;
+    gamePlayerList.appendChild(item);
+  });
+}
+
+document.getElementById("create-game-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  let form = event.target;
+  let button = form.querySelector("button");
+  button.disabled = true;
+
+  try {
+    let game = await submitForm("/games", {
+      classroom_id: form.classroom_id.value,
+      set_id: form.set_id.value,
+    });
+    enterGameView(game.id, "professor", game.join_code);
+  } catch (err) {
+    setDashboardMessage(err.message);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+document.getElementById("join-game-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  let form = event.target;
+  let button = form.querySelector("button");
+  button.disabled = true;
+
+  try {
+    let result = await submitForm("/games/join", { code: form.code.value });
+    form.reset();
+    enterGameView(result.game_id, "student", null);
+  } catch (err) {
+    setStudentDashboardMessage(err.message);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+document.getElementById("start-game-button").addEventListener("click", async () => {
+  try {
+    await apiRequest(`/games/${currentGameId}/start`, { method: "POST" });
+    setGameMessage("");
+    pollGame();
+  } catch (err) {
+    setGameMessage(err.message);
+  }
+});
+
+document.getElementById("end-game-button").addEventListener("click", async () => {
+  try {
+    await apiRequest(`/games/${currentGameId}/end`, { method: "POST" });
+    setGameMessage("");
+    pollGame();
+  } catch (err) {
+    setGameMessage(err.message);
+  }
+});
+
+gameAnswerForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  let form = event.target;
+  let button = form.querySelector("button");
+  button.disabled = true;
+
+  try {
+    let result = await apiRequest(`/games/${currentGameId}/answer`, {
+      method: "POST",
+      body: JSON.stringify({ answer: form.answer.value }),
+    });
+    lastAnsweredTermIndex = currentTermIndex;
+    gameAnswerMessage.textContent = result.correct
+      ? `Correct! Score: ${result.score}`
+      : `Not quite. Score: ${result.score}`;
+    gameAnswerMessage.classList.toggle("success", result.correct);
+  } catch (err) {
+    gameAnswerMessage.textContent = err.message;
+    gameAnswerMessage.classList.remove("success");
+  } finally {
+    button.disabled = false;
+  }
+});
