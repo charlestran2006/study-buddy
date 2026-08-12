@@ -73,8 +73,9 @@ CREATE TABLE games (
   professor_id INTEGER REFERENCES users(id),
   join_code TEXT UNIQUE NOT NULL,
   status TEXT NOT NULL DEFAULT 'waiting' CHECK (status IN ('waiting', 'active', 'finished')),
-  current_term_index INTEGER NOT NULL DEFAULT 0,
-  current_term_started_at TIMESTAMP,
+  current_term_index INTEGER DEFAULT 0,
+  current_term_id INTEGER REFERENCES terms(id),
+  current_choices JSONB,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -83,7 +84,18 @@ CREATE TABLE game_players (
   game_id INTEGER REFERENCES games(id),
   student_id INTEGER REFERENCES users(id),
   score INTEGER NOT NULL DEFAULT 0,
-  last_answered_term_index INTEGER,
+  streak INTEGER NOT NULL DEFAULT 0,
   joined_at TIMESTAMP DEFAULT NOW(),
   UNIQUE (game_id, student_id)
+);
+
+CREATE TABLE game_answers (
+  id SERIAL PRIMARY KEY,
+  game_player_id INTEGER NOT NULL REFERENCES game_players(id),
+  term_id INTEGER NOT NULL REFERENCES terms(id),
+  selected_term_id INTEGER REFERENCES terms(id),
+  is_correct BOOLEAN NOT NULL,
+  points_awarded INTEGER NOT NULL DEFAULT 0,
+  answered_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE (game_player_id, term_id)
 );
