@@ -1,14 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { pool } = require('./db');
-
-
-function requireAuth(req, res, next) {
-    if (!req.session.userId) {
-        return res.status(401).json({ error: "not logged in" });
-    }
-    next();
-}
+const { pool } = require('../db');
+const { requireAuth } = require('../middleware/auth');
 
 
 router.get('/test', requireAuth, (req, res) => {
@@ -18,9 +11,9 @@ router.get('/test', requireAuth, (req, res) => {
 
 router.get('/sets/:id/study', requireAuth, (req, res) => {
     const { id } = req.params;
-    
+
     const query = `
-        SELECT t.* 
+        SELECT t.*
         FROM terms t
         JOIN sets s ON t.set_id = s.id
         WHERE t.set_id = $1 AND s.user_id = $2
@@ -32,7 +25,7 @@ router.get('/sets/:id/study', requireAuth, (req, res) => {
             console.error(err);
             return res.status(500).json({ error: "database query error" });
         }
-        
+
         if (result.rows.length === 0) {
             return res.status(404).json({ error: "set not found or access denied" });
         }
