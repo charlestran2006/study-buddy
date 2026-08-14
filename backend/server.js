@@ -4,34 +4,30 @@ let bcrypt = require("bcrypt");
 let session = require("express-session");
 let path = require("path");
 let crypto = require("crypto");
+let http = require("http");
+let { WebSocketServer } = require("ws");
 let { pool } = require("./db");
 const studyRoutes = require('./study_routes');
+const createGameManager = require("./game");
 
 let app = express();
 let port = process.env.PORT || 3000;
 let hostname = "0.0.0.0";
 
-
-let pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+let sessionMiddleware = session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+  },
 });
 
-module.exports = { pool };
-
 app.use(express.json());
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-    },
-  })
-);
+app.use(sessionMiddleware);
 app.use(express.static(path.join(__dirname, "public")));
 app.use('/api', studyRoutes);
 app.get("/", (req, res) => {
@@ -493,6 +489,27 @@ app.post("/assignments", requireAuth, requireProfessor, (req, res) => {
   );
 });
 
-app.listen(port, hostname, () => {
+let httpServer = http.createServer(app);
+let wss = new WebSocketServer({ noServer: true });
+let gameManager = createGameManager(pool);
+
+httpServer.on("upgrade", (req, socket, head) => {
+  sessionMiddleware(req, {}, () => {
+    if (!req.session || !req.session.userId) {
+      socket.destroy();
+      return;
+    }
+
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      wss.emit("connection", ws, req);
+    });
+  });
+});
+
+wss.on("connection", (ws, req) => {
+  gameManager.handleConnection(ws, req);
+});
+
+httpServer.listen(port, hostname, () => {
   console.log(`http://${hostname}:${port}`);
 });
