@@ -110,6 +110,37 @@
           <button type="submit">Assign</button>
         </form>
       </section>
+
+      <section class="panel">
+        <h2>Live Game</h2>
+        <form id="host-game-form" class="panel-form">
+          <label for="host-classroom-select">Classroom</label>
+          <select id="host-classroom-select" name="classroom_id" required></select>
+
+          <label for="host-set-select">Study set</label>
+          <select id="host-set-select" name="set_id" required></select>
+
+          <button type="submit">Host Game</button>
+        </form>
+
+        <div id="host-game-live" class="game-live hidden">
+          <p id="host-game-status" class="game-status"></p>
+          <h3>Players</h3>
+          <ul id="host-player-list" class="player-list"></ul>
+
+          <div id="host-question-view" class="question-view hidden">
+            <p class="question-term" id="host-question-term"></p>
+            <p id="host-question-meta"></p>
+          </div>
+
+          <div id="host-leaderboard-view" class="leaderboard-view hidden">
+            <h3>Leaderboard</h3>
+            <ol id="host-leaderboard-list" class="leaderboard-list"></ol>
+          </div>
+
+          <button type="button" id="host-end-game-button">End Game</button>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -137,6 +168,30 @@
           <input id="join-code" name="code" type="text" required />
           <button type="submit">Join</button>
         </form>
+      </section>
+
+      <section class="panel">
+        <h2>Live Game</h2>
+        <form id="join-game-form" class="panel-form">
+          <label for="game-classroom-select">Classroom</label>
+          <select id="game-classroom-select" name="classroom_id" required></select>
+
+          <button type="submit">Join Game</button>
+        </form>
+
+        <div id="player-game-live" class="game-live hidden">
+          <p id="player-game-status" class="game-status"></p>
+
+          <div id="player-question-view" class="question-view hidden">
+            <p class="question-term" id="player-question-term"></p>
+            <div id="player-choices" class="choice-grid"></div>
+          </div>
+
+          <div id="player-leaderboard-view" class="leaderboard-view hidden">
+            <h3>Leaderboard</h3>
+            <ol id="player-leaderboard-list" class="leaderboard-list"></ol>
+          </div>
+        </div>
       </section>
     </main>
   </div>

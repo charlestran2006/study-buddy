@@ -319,3 +319,103 @@ body {
   line-height: 1;
   padding: 0 4px;
 }
+
+.game-live {
+  margin-top: 20px;
+  border-top: 1px solid #e2e4e9;
+  padding-top: 16px;
+}
+
+.game-status {
+  font-size: 0.9rem;
+  color: #4f46e5;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.player-list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.player-list li {
+  border: 1px solid #e2e4e9;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+.question-view {
+  margin-bottom: 16px;
+}
+
+.question-term {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.choice-button {
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.choice-button:hover:not(:disabled) {
+  border-color: #4f46e5;
+  background: #f4f5ff;
+}
+
+.choice-button.selected {
+  border-color: #4f46e5;
+  background: #eef0ff;
+}
+
+.choice-button.correct {
+  border-color: #16a34a;
+  background: #ecfdf3;
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.choice-button:disabled {
+  cursor: not-allowed;
+}
+
+.leaderboard-list {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#host-end-game-button {
+  padding: 8px 14px;
+  border: 1px solid #dc2626;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+#host-end-game-button:hover {
+  background: #fef2f2;
+}
