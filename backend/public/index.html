@@ -112,30 +112,33 @@
       </section>
 
       <section class="panel">
-        <h2>Start a Game</h2>
-        <form id="create-game-form" class="panel-form">
-          <label for="game-set-select">Study set</label>
-          <select id="game-set-select" name="set_id" required></select>
+        <h2>Live Game</h2>
+        <form id="host-game-form" class="panel-form">
+          <label for="host-classroom-select">Classroom</label>
+          <select id="host-classroom-select" name="classroom_id" required></select>
 
-          <button type="submit">Start Game</button>
+          <label for="host-set-select">Study set</label>
+          <select id="host-set-select" name="set_id" required></select>
+
+          <button type="submit">Host Game</button>
         </form>
 
-        <div id="active-game" class="hidden">
-          <p class="game-join-code-line">
-            Join code <span id="game-join-code" class="join-code"></span>
-          </p>
-          <p id="game-player-count" class="empty-state"></p>
-          <button type="button" id="start-game-button">Start Game</button>
+        <div id="host-game-live" class="game-live hidden">
+          <p id="host-game-status" class="game-status"></p>
+          <h3>Players</h3>
+          <ul id="host-player-list" class="player-list"></ul>
 
-          <div id="host-question" class="hidden">
-            <p id="game-progress" class="empty-state"></p>
-            <p class="game-term" id="host-term"></p>
-            <ul id="host-tally" class="host-tally"></ul>
-            <p id="host-answered-count" class="empty-state"></p>
-            <button type="button" id="next-question-button">Next Question</button>
+          <div id="host-question-view" class="question-view hidden">
+            <p class="question-term" id="host-question-term"></p>
+            <p id="host-question-meta"></p>
           </div>
 
-          <ol id="game-leaderboard" class="leaderboard hidden"></ol>
+          <div id="host-leaderboard-view" class="leaderboard-view hidden">
+            <h3>Leaderboard</h3>
+            <ol id="host-leaderboard-list" class="leaderboard-list"></ol>
+          </div>
+
+          <button type="button" id="host-end-game-button">End Game</button>
         </div>
       </section>
     </main>
@@ -168,32 +171,26 @@
       </section>
 
       <section class="panel">
-        <h2>Join a Game</h2>
+        <h2>Live Game</h2>
         <form id="join-game-form" class="panel-form">
-          <label for="game-code">Join code</label>
-          <input id="game-code" name="code" type="text" required />
+          <label for="game-classroom-select">Classroom</label>
+          <select id="game-classroom-select" name="classroom_id" required></select>
+
           <button type="submit">Join Game</button>
         </form>
-        <p id="game-status-message" class="empty-state"></p>
-      </section>
 
-      <section class="panel game-play-panel hidden" id="game-play-panel">
-        <h2>Game</h2>
+        <div id="player-game-live" class="game-live hidden">
+          <p id="player-game-status" class="game-status"></p>
 
-        <div id="game-waiting">
-          <p class="empty-state">Waiting for the professor to start the game&hellip;</p>
-        </div>
+          <div id="player-question-view" class="question-view hidden">
+            <p class="question-term" id="player-question-term"></p>
+            <div id="player-choices" class="choice-grid"></div>
+          </div>
 
-        <div id="game-question" class="hidden">
-          <p class="game-progress-line" id="game-progress-line"></p>
-          <p class="game-term" id="game-term"></p>
-          <div id="game-choices" class="choice-grid"></div>
-          <p id="game-answer-status" class="empty-state hidden"></p>
-        </div>
-
-        <div id="game-finished" class="hidden">
-          <p class="empty-state">Game over! Final standings:</p>
-          <ol id="game-final-leaderboard" class="leaderboard"></ol>
+          <div id="player-leaderboard-view" class="leaderboard-view hidden">
+            <h3>Leaderboard</h3>
+            <ol id="player-leaderboard-list" class="leaderboard-list"></ol>
+          </div>
         </div>
       </section>
     </main>
