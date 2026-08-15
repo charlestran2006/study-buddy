@@ -15,9 +15,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
-    "pg": "^8.22.0"
-  },
-  "devDependencies": {
-    "prisma": "^7.9.1"
+    "pg": "^8.22.0",
+    "ws": "^8.21.3"
   }
 }
