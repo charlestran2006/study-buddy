@@ -10,7 +10,6 @@ let { pool } = require("./db");
 const studyRoutes = require('./study_routes');
 const createGameManager = require("./game");
 
-let app = express();
 let port = process.env.PORT || 3000;
 let hostname = "0.0.0.0";
 

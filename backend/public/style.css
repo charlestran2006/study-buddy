@@ -240,6 +240,16 @@ body {
   color: #6b7280;
 }
 
+.game-join-code-line {
+  margin: 16px 0 4px;
+  font-size: 0.95rem;
+}
+
+.game-join-code-line .join-code {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
 .panel-form {
   display: flex;
   flex-direction: column;
