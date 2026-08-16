@@ -79,13 +79,21 @@ document.getElementById("login-form").addEventListener("submit", async (event) =
   event.preventDefault();
   let form = event.target;
   let button = form.querySelector("button");
+
+  let username = form.username.value.trim();
+  let password = form.password.value;
+
+  if (!username || !password) {
+    setMessage("Please fill out all fields.");
+    return;
+  }
+
   button.disabled = true;
+  let originalButtonText = button.textContent;
+  button.textContent = "Logging in...";
 
   try {
-    let user = await submitForm("/login", {
-      username: form.username.value,
-      password: form.password.value,
-    });
+    let user = await submitForm("/login", { username, password });
 
     if (user.role === "professor") {
       showProfessorDashboard(user);
@@ -96,6 +104,7 @@ document.getElementById("login-form").addEventListener("submit", async (event) =
     setMessage(err.message);
   } finally {
     button.disabled = false;
+    button.textContent = originalButtonText;
   }
 });
 
@@ -103,20 +112,30 @@ document.getElementById("signup-form").addEventListener("submit", async (event) 
   event.preventDefault();
   let form = event.target;
   let button = form.querySelector("button");
+
+  let username = form.username.value.trim();
+  let email = form.email.value.trim();
+  let password = form.password.value;
+  let role = form.role.value;
+
+  if (!username || !email || !password || !role) {
+    setMessage("Please fill out all required fields.");
+    return;
+  }
+
+  if (password.length < 6) {
+    setMessage("Password must be at least 6 characters long.");
+    return;
+  }
+
   button.disabled = true;
+  let originalButtonText = button.textContent;
+  button.textContent = "Creating Account...";
 
   try {
-    await submitForm("/signup", {
-      username: form.username.value,
-      email: form.email.value,
-      password: form.password.value,
-      role: form.role.value,
-    });
+    await submitForm("/signup", { username, email, password, role });
 
-    let user = await submitForm("/login", {
-      username: form.username.value,
-      password: form.password.value,
-    });
+    let user = await submitForm("/login", { username, password });
 
     if (user.role === "professor") {
       showProfessorDashboard(user);
@@ -127,6 +146,7 @@ document.getElementById("signup-form").addEventListener("submit", async (event) 
     setMessage(err.message);
   } finally {
     button.disabled = false;
+    button.textContent = originalButtonText;
   }
 });
 
@@ -134,7 +154,6 @@ async function logout() {
   try {
     await apiRequest("/logout", { method: "POST" });
   } catch (err) {
-    // ignore, clear the UI regardless
   }
   stopGamePolling();
   stopStudentGamePolling();
@@ -148,8 +167,6 @@ async function logout() {
 
 document.getElementById("logout-button").addEventListener("click", logout);
 document.getElementById("student-logout-button").addEventListener("click", logout);
-
-// --- Classrooms ---
 
 let classroomList = document.getElementById("classroom-list");
 let assignClassroomSelect = document.getElementById("assign-classroom-select");
@@ -214,8 +231,6 @@ document.getElementById("create-classroom-form").addEventListener("submit", asyn
     button.disabled = false;
   }
 });
-
-// --- Study sets ---
 
 let termRows = document.getElementById("term-rows");
 let assignSetSelect = document.getElementById("assign-set-select");
@@ -299,8 +314,6 @@ document.getElementById("create-set-form").addEventListener("submit", async (eve
   }
 });
 
-// --- Assignments ---
-
 document.getElementById("assign-set-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   let form = event.target;
@@ -319,8 +332,6 @@ document.getElementById("assign-set-form").addEventListener("submit", async (eve
     button.disabled = false;
   }
 });
-
-// --- Games (professor) ---
 
 let activeGame = document.getElementById("active-game");
 let gameJoinCode = document.getElementById("game-join-code");
@@ -348,7 +359,6 @@ async function loadLeaderboard(gameId, listEl) {
     let data = await apiRequest(`/games/${gameId}/leaderboard`);
     renderLeaderboard(data.players, listEl);
   } catch (err) {
-    // ignore transient errors while polling
   }
 }
 
@@ -392,7 +402,6 @@ function renderProfessorGame(game) {
     return;
   }
 
-  // finished
   hostQuestion.classList.add("hidden");
   gameLeaderboardList.classList.remove("hidden");
   loadLeaderboard(game.id, gameLeaderboardList);
@@ -483,8 +492,6 @@ nextQuestionButton.addEventListener("click", async () => {
   }
 });
 
-// --- Student: my classrooms ---
-
 let myClassroomList = document.getElementById("my-classroom-list");
 
 async function loadMyClassrooms() {
@@ -532,8 +539,6 @@ document.getElementById("join-classroom-form").addEventListener("submit", async 
     button.disabled = false;
   }
 });
-
-// --- Games (student) ---
 
 let gameStatusMessage = document.getElementById("game-status-message");
 let gamePlayPanel = document.getElementById("game-play-panel");
