@@ -75,6 +75,14 @@ function showStudentDashboard(user) {
   loadMyClassrooms();
 }
 
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    setDashboardMessage("Join code copied to clipboard!", true);
+  }).catch(() => {
+    setDashboardMessage("Failed to copy join code.");
+  });
+}
+
 document.getElementById("login-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   let form = event.target;
@@ -193,13 +201,22 @@ function renderClassrooms(classrooms) {
   classrooms.forEach((classroom) => {
     let item = document.createElement("li");
     item.className = "classroom-item";
+    
+    let joinCodeSpan = document.createElement("span");
+    joinCodeSpan.className = "join-code";
+    joinCodeSpan.textContent = classroom.join_code;
+    joinCodeSpan.style.cursor = "pointer";
+    joinCodeSpan.title = "Click to copy join code";
+    joinCodeSpan.addEventListener("click", () => copyToClipboard(classroom.join_code));
+
     item.innerHTML = `
       <div class="classroom-name">${escapeHtml(classroom.name)}</div>
       <div class="classroom-meta">
         ${classroom.student_count} student${classroom.student_count === 1 ? "" : "s"} &middot;
-        join code <span class="join-code">${escapeHtml(classroom.join_code)}</span>
+        join code 
       </div>
     `;
+    item.querySelector(".classroom-meta").appendChild(joinCodeSpan);
     classroomList.appendChild(item);
 
     let option = document.createElement("option");
