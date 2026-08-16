@@ -4,27 +4,17 @@ let bcrypt = require("bcrypt");
 let session = require("express-session");
 let path = require("path");
 let crypto = require("crypto");
+let http = require("http");
+let { WebSocketServer } = require("ws");
 let { pool } = require("./db");
 const studyRoutes = require('./study_routes');
+const createGameManager = require("./game");
 
-let app = express();
 let port = process.env.PORT || 3000;
 let hostname = "0.0.0.0";
 
 app.use(express.json());
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-    },
-  })
-);
+app.use(sessionMiddleware);
 app.use(express.static(path.join(__dirname, "public")));
 app.use('/api', studyRoutes);
 
@@ -1001,6 +991,6 @@ app.post("/games/:id/end", requireAuth, requireProfessor, (req, res) => {
   );
 });
 
-app.listen(port, hostname, () => {
+httpServer.listen(port, hostname, () => {
   console.log(`http://${hostname}:${port}`);
 });

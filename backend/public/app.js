@@ -163,6 +163,8 @@ async function logout() {
     await apiRequest("/logout", { method: "POST" });
   } catch (err) {
   }
+  if (hostSocket) hostSocket.close();
+  if (playerSocket) playerSocket.close();
   stopGamePolling();
   stopStudentGamePolling();
   activeGame.classList.add("hidden");
@@ -192,7 +194,7 @@ async function loadClassrooms() {
 function renderClassrooms(classrooms) {
   classroomList.innerHTML = "";
   assignClassroomSelect.innerHTML = "";
-  gameClassroomSelect.innerHTML = "";
+  hostClassroomSelect.innerHTML = "";
 
   if (classrooms.length === 0) {
     classroomList.innerHTML = '<li class="empty-state">No classrooms yet.</li>';
@@ -224,10 +226,10 @@ function renderClassrooms(classrooms) {
     option.textContent = classroom.name;
     assignClassroomSelect.appendChild(option);
 
-    let gameOption = document.createElement("option");
-    gameOption.value = classroom.id;
-    gameOption.textContent = classroom.name;
-    gameClassroomSelect.appendChild(gameOption);
+    let hostOption = document.createElement("option");
+    hostOption.value = classroom.id;
+    hostOption.textContent = classroom.name;
+    hostClassroomSelect.appendChild(hostOption);
   });
 }
 
@@ -251,7 +253,7 @@ document.getElementById("create-classroom-form").addEventListener("submit", asyn
 
 let termRows = document.getElementById("term-rows");
 let assignSetSelect = document.getElementById("assign-set-select");
-let gameSetSelect = document.getElementById("game-set-select");
+let hostSetSelect = document.getElementById("host-set-select");
 
 function addTermRow() {
   let row = document.createElement("div");
@@ -280,7 +282,7 @@ async function loadSets() {
 
 function renderSets(sets) {
   assignSetSelect.innerHTML = "";
-  gameSetSelect.innerHTML = "";
+  hostSetSelect.innerHTML = "";
 
   sets.forEach((set) => {
     let option = document.createElement("option");
@@ -288,8 +290,10 @@ function renderSets(sets) {
     option.textContent = set.title;
     assignSetSelect.appendChild(option);
 
-    let gameOption = option.cloneNode(true);
-    gameSetSelect.appendChild(gameOption);
+    let hostOption = document.createElement("option");
+    hostOption.value = set.id;
+    hostOption.textContent = set.title;
+    hostSetSelect.appendChild(hostOption);
   });
 }
 
@@ -510,6 +514,7 @@ nextQuestionButton.addEventListener("click", async () => {
 });
 
 let myClassroomList = document.getElementById("my-classroom-list");
+let gameClassroomSelect = document.getElementById("game-classroom-select");
 
 async function loadMyClassrooms() {
   try {
@@ -522,6 +527,7 @@ async function loadMyClassrooms() {
 
 function renderMyClassrooms(classrooms) {
   myClassroomList.innerHTML = "";
+  gameClassroomSelect.innerHTML = "";
 
   if (classrooms.length === 0) {
     myClassroomList.innerHTML = '<li class="empty-state">You haven\'t joined any classrooms yet.</li>';
@@ -536,6 +542,11 @@ function renderMyClassrooms(classrooms) {
       <div class="classroom-meta">Taught by ${escapeHtml(classroom.professor_username)}</div>
     `;
     myClassroomList.appendChild(item);
+
+    let option = document.createElement("option");
+    option.value = classroom.id;
+    option.textContent = classroom.name;
+    gameClassroomSelect.appendChild(option);
   });
 }
 
