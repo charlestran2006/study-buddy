@@ -11,7 +11,6 @@ let app = express();
 let port = process.env.PORT || 3000;
 let hostname = "0.0.0.0";
 
-
 app.use(express.json());
 app.use(
   session({
@@ -28,6 +27,7 @@ app.use(
 );
 app.use(express.static(path.join(__dirname, "public")));
 app.use('/api', studyRoutes);
+
 app.get("/", (req, res) => {
   res.send("hello world");
 });
@@ -487,11 +487,26 @@ app.post("/assignments", requireAuth, requireProfessor, (req, res) => {
   );
 });
 
-app.post("/games", requireAuth, requireProfessor, (req, res) => {
-  let setId = req.body.set_id;
-
-  if (!setId) {
 const GAME_TERM_SECONDS = 15;
+
+const BASE_POINTS = 100;
+const STREAK_BONUS_PER_ANSWER = 20;
+const STREAK_BONUS_CAP = 100;
+
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function buildChoices(correctTerm, allTerms) {
+  let others = shuffle(allTerms.filter((t) => t.id !== correctTerm.id));
+  let distractors = others.slice(0, Math.min(3, others.length));
+  let choices = shuffle([correctTerm, ...distractors]);
+  return choices.map((t) => ({ term_id: t.id, definition: t.definition }));
+}
 
 app.post("/games", requireAuth, requireProfessor, (req, res) => {
   let classroomId = req.body.classroom_id;
@@ -503,11 +518,6 @@ app.post("/games", requireAuth, requireProfessor, (req, res) => {
   }
 
   pool.query(
-    `SELECT s.id, (SELECT COUNT(*) FROM terms WHERE set_id = s.id)::int AS term_count
-     FROM sets s
-     WHERE s.id = $1 AND s.user_id = $2`,
-    [setId, req.session.userId],
-    (err, setResult) => {
     "SELECT id FROM classrooms WHERE id = $1 AND professor_id = $2",
     [classroomId, req.session.userId],
     (err, classroomResult) => {
@@ -517,36 +527,15 @@ app.post("/games", requireAuth, requireProfessor, (req, res) => {
         return;
       }
 
-      if (setResult.rows.length === 0) {
-        res.status(404).json({ error: "study set not found" });
-        return;
-      }
-
-      if (setResult.rows[0].term_count < 2) {
-        res.status(400).json({ error: "study set needs at least 2 terms to play as a game" });
-        return;
-      }
-
-      let joinCode = generateJoinCode();
-
-      pool.query(
-        "INSERT INTO games (set_id, professor_id, join_code) VALUES ($1, $2, $3) RETURNING id, set_id, join_code, status, current_term_index, created_at",
-        [setId, req.session.userId, joinCode],
-        (err, result) => {
-          if (err) {
-            console.log(err);
-            res.status(400).json({ error: "could not create game" });
-            return;
-          }
-
-          res.status(200).json(result.rows[0]);
       if (classroomResult.rows.length === 0) {
         res.status(404).json({ error: "classroom not found" });
         return;
       }
 
       pool.query(
-        "SELECT id FROM sets WHERE id = $1 AND user_id = $2",
+        `SELECT s.id, (SELECT COUNT(*) FROM terms WHERE set_id = s.id)::int AS term_count
+         FROM sets s
+         WHERE s.id = $1 AND s.user_id = $2`,
         [setId, req.session.userId],
         (err, setResult) => {
           if (err) {
@@ -557,6 +546,11 @@ app.post("/games", requireAuth, requireProfessor, (req, res) => {
 
           if (setResult.rows.length === 0) {
             res.status(404).json({ error: "study set not found" });
+            return;
+          }
+
+          if (setResult.rows[0].term_count < 2) {
+            res.status(400).json({ error: "study set needs at least 2 terms to play as a game" });
             return;
           }
 
@@ -590,7 +584,6 @@ app.post("/games/join", requireAuth, requireStudent, (req, res) => {
   }
 
   pool.query(
-    "SELECT id, status FROM games WHERE join_code = $1",
     "SELECT id, classroom_id, status FROM games WHERE join_code = $1",
     [code.toUpperCase()],
     (err, result) => {
@@ -612,431 +605,6 @@ app.post("/games/join", requireAuth, requireStudent, (req, res) => {
         return;
       }
 
-      pool.query(
-        "INSERT INTO game_players (game_id, student_id) VALUES ($1, $2) RETURNING id",
-        [game.id, req.session.userId],
-        (err) => {
-          if (err) {
-            console.log(err);
-            res.status(400).json({ error: "already joined this game" });
-            return;
-          }
-
-          res.status(200).json(game);
-        }
-      );
-    }
-  );
-});
-
-// Points per correct answer, plus a streak bonus that grows with consecutive
-// correct answers (capped so one long streak can't dominate the leaderboard).
-const BASE_POINTS = 100;
-const STREAK_BONUS_PER_ANSWER = 20;
-const STREAK_BONUS_CAP = 100;
-
-function shuffle(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    let j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
-
-// Builds the multiple-choice options for a question: the correct term plus up
-// to 3 distractors drawn from other terms in the same set (fewer if the set
-// doesn't have enough terms), in random display order.
-function buildChoices(correctTerm, allTerms) {
-  let others = shuffle(allTerms.filter((t) => t.id !== correctTerm.id));
-  let distractors = others.slice(0, Math.min(3, others.length));
-  let choices = shuffle([correctTerm, ...distractors]);
-  return choices.map((t) => ({ term_id: t.id, definition: t.definition }));
-}
-
-app.get("/games/:id", requireAuth, requireProfessor, async (req, res) => {
-  let gameId = req.params.id;
-
-  try {
-    let gameResult = await pool.query(
-      `SELECT g.id, g.set_id, g.join_code, g.status, g.current_term_index, g.current_term_id,
-              g.current_choices, g.created_at,
-              (SELECT COUNT(*) FROM terms WHERE set_id = g.set_id)::int AS total_terms
-       FROM games g
-       WHERE g.id = $1 AND g.professor_id = $2`,
-      [gameId, req.session.userId]
-    );
-
-    if (gameResult.rows.length === 0) {
-      res.status(404).json({ error: "game not found" });
-      return;
-    }
-
-    let game = gameResult.rows[0];
-
-    let countResult = await pool.query(
-      "SELECT COUNT(*)::int AS player_count FROM game_players WHERE game_id = $1",
-      [gameId]
-    );
-    let playerCount = countResult.rows[0].player_count;
-
-    let currentTerm = null;
-    let answeredCount = 0;
-    let correctCount = 0;
-
-    if (game.current_term_id) {
-      let termResult = await pool.query("SELECT id, term FROM terms WHERE id = $1", [game.current_term_id]);
-      currentTerm = termResult.rows[0] || null;
-
-      let tallyResult = await pool.query(
-        `SELECT COUNT(*)::int AS answered_count, COUNT(*) FILTER (WHERE ga.is_correct)::int AS correct_count
-         FROM game_answers ga
-         JOIN game_players gp ON gp.id = ga.game_player_id
-         WHERE gp.game_id = $1 AND ga.term_id = $2`,
-        [gameId, game.current_term_id]
-      );
-      answeredCount = tallyResult.rows[0].answered_count;
-      correctCount = tallyResult.rows[0].correct_count;
-    }
-
-    res.status(200).json({
-      id: game.id,
-      set_id: game.set_id,
-      join_code: game.join_code,
-      status: game.status,
-      current_term_index: game.current_term_index,
-      total_terms: game.total_terms,
-      created_at: game.created_at,
-      player_count: playerCount,
-      current_term: currentTerm,
-      choices: game.current_choices || null,
-      answered_count: answeredCount,
-      correct_count: correctCount,
-    });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "something went wrong" });
-  }
-});
-
-app.post("/games/:id/start", requireAuth, requireProfessor, async (req, res) => {
-  let gameId = req.params.id;
-
-  try {
-    let gameResult = await pool.query(
-      "SELECT id, set_id, status FROM games WHERE id = $1 AND professor_id = $2",
-      [gameId, req.session.userId]
-    );
-
-    if (gameResult.rows.length === 0) {
-      res.status(404).json({ error: "game not found" });
-      return;
-    }
-
-    let game = gameResult.rows[0];
-
-    if (game.status !== "waiting") {
-      res.status(400).json({ error: "game has already started" });
-      return;
-    }
-
-    let termsResult = await pool.query(
-      "SELECT id, definition FROM terms WHERE set_id = $1 ORDER BY position",
-      [game.set_id]
-    );
-    let firstTerm = termsResult.rows[0];
-    let choices = buildChoices(firstTerm, termsResult.rows);
-
-    let updateResult = await pool.query(
-      `UPDATE games
-       SET status = 'active', current_term_index = 0, current_term_id = $1, current_choices = $2
-       WHERE id = $3
-       RETURNING id, set_id, join_code, status, current_term_index, created_at`,
-      [firstTerm.id, JSON.stringify(choices), gameId]
-    );
-
-    res.status(200).json(updateResult.rows[0]);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "something went wrong" });
-  }
-});
-
-// Professor-driven pacing (Kahoot-style): students never auto-advance each
-// other. The professor calls this whenever they're ready to move on, whether
-// or not everyone has answered yet.
-app.post("/games/:id/next", requireAuth, requireProfessor, async (req, res) => {
-  let gameId = req.params.id;
-
-  try {
-    let gameResult = await pool.query(
-      "SELECT id, set_id, status, current_term_index FROM games WHERE id = $1 AND professor_id = $2",
-      [gameId, req.session.userId]
-    );
-
-    if (gameResult.rows.length === 0) {
-      res.status(404).json({ error: "game not found" });
-      return;
-    }
-
-    let game = gameResult.rows[0];
-
-    if (game.status !== "active") {
-      res.status(400).json({ error: "game is not active" });
-      return;
-    }
-
-    let termsResult = await pool.query(
-      "SELECT id, definition FROM terms WHERE set_id = $1 ORDER BY position",
-      [game.set_id]
-    );
-    let terms = termsResult.rows;
-    let nextIndex = game.current_term_index + 1;
-
-    if (nextIndex >= terms.length) {
-      let updateResult = await pool.query(
-        `UPDATE games
-         SET status = 'finished', current_term_id = NULL, current_choices = NULL
-         WHERE id = $1
-         RETURNING id, set_id, join_code, status, current_term_index, created_at`,
-        [gameId]
-      );
-      res.status(200).json(updateResult.rows[0]);
-      return;
-    }
-
-    let nextTerm = terms[nextIndex];
-    let choices = buildChoices(nextTerm, terms);
-
-    let updateResult = await pool.query(
-      `UPDATE games
-       SET current_term_index = $1, current_term_id = $2, current_choices = $3
-       WHERE id = $4
-       RETURNING id, set_id, join_code, status, current_term_index, created_at`,
-      [nextIndex, nextTerm.id, JSON.stringify(choices), gameId]
-    );
-
-    res.status(200).json(updateResult.rows[0]);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "something went wrong" });
-  }
-});
-
-app.post("/games/:id/answer", requireAuth, requireStudent, async (req, res) => {
-  let gameId = req.params.id;
-  let termId = req.body.term_id;
-  let selectedTermId = req.body.selected_term_id;
-
-  if (!termId || !selectedTermId) {
-    res.status(400).json({ error: "missing fields" });
-    return;
-  }
-
-  // Scoring touches games, game_players, and game_answers together and has to
-  // stay correct when two students answer at the same time, so this route
-  // uses a transaction with a row lock on the game instead of the callback
-  // style used elsewhere in this file.
-  let client;
-  try {
-    client = await pool.connect();
-    await client.query("BEGIN");
-
-    let gameResult = await client.query(
-      "SELECT id, status, current_term_id FROM games WHERE id = $1 FOR UPDATE",
-      [gameId]
-    );
-
-    if (gameResult.rows.length === 0) {
-      await client.query("ROLLBACK");
-      res.status(404).json({ error: "game not found" });
-      return;
-    }
-
-    let game = gameResult.rows[0];
-
-    if (game.status !== "active" || !game.current_term_id) {
-      await client.query("ROLLBACK");
-      res.status(400).json({ error: "game is not active" });
-      return;
-    }
-
-    if (game.current_term_id !== Number(termId)) {
-      await client.query("ROLLBACK");
-      res.status(409).json({ error: "the question has changed, please refresh" });
-      return;
-    }
-
-    let playerResult = await client.query(
-      "SELECT id, score, streak FROM game_players WHERE game_id = $1 AND student_id = $2",
-      [gameId, req.session.userId]
-    );
-
-    if (playerResult.rows.length === 0) {
-      await client.query("ROLLBACK");
-      res.status(403).json({ error: "you have not joined this game" });
-      return;
-    }
-
-    let player = playerResult.rows[0];
-    let isCorrect = Number(selectedTermId) === game.current_term_id;
-    let newStreak = isCorrect ? player.streak + 1 : 0;
-    let pointsAwarded = isCorrect
-      ? BASE_POINTS + Math.min((newStreak - 1) * STREAK_BONUS_PER_ANSWER, STREAK_BONUS_CAP)
-      : 0;
-
-    let insertResult = await client.query(
-      `INSERT INTO game_answers (game_player_id, term_id, selected_term_id, is_correct, points_awarded)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (game_player_id, term_id) DO NOTHING
-       RETURNING id`,
-      [player.id, game.current_term_id, selectedTermId, isCorrect, pointsAwarded]
-    );
-
-    if (insertResult.rows.length === 0) {
-      await client.query("ROLLBACK");
-      res.status(409).json({ error: "already answered this question" });
-      return;
-    }
-
-    let newScore = player.score + pointsAwarded;
-
-    await client.query(
-      "UPDATE game_players SET score = $1, streak = $2 WHERE id = $3",
-      [newScore, newStreak, player.id]
-    );
-
-    await client.query("COMMIT");
-
-    res.status(200).json({
-      correct: isCorrect,
-      correct_term_id: game.current_term_id,
-      points_awarded: pointsAwarded,
-      score: newScore,
-      streak: newStreak,
-    });
-  } catch (err) {
-    if (client) {
-      try {
-        await client.query("ROLLBACK");
-      } catch (rollbackErr) {
-        console.log(rollbackErr);
-      }
-    }
-    console.log(err);
-    res.status(500).json({ error: "something went wrong" });
-  } finally {
-    if (client) client.release();
-  }
-});
-
-app.get("/games/:id/state", requireAuth, async (req, res) => {
-  let gameId = req.params.id;
-
-  try {
-    let gameResult = await pool.query(
-      `SELECT id, set_id, professor_id, status, current_term_index, current_term_id, current_choices
-       FROM games WHERE id = $1`,
-      [gameId]
-    );
-
-    if (gameResult.rows.length === 0) {
-      res.status(404).json({ error: "game not found" });
-      return;
-    }
-
-    let game = gameResult.rows[0];
-    let player = null;
-
-    if (req.session.role === "professor") {
-      if (game.professor_id !== req.session.userId) {
-        res.status(403).json({ error: "not authorized for this game" });
-        return;
-      }
-    } else {
-      let playerResult = await pool.query(
-        "SELECT id, score, streak FROM game_players WHERE game_id = $1 AND student_id = $2",
-        [gameId, req.session.userId]
-      );
-
-      if (playerResult.rows.length === 0) {
-        res.status(403).json({ error: "not authorized for this game" });
-        return;
-      }
-
-      player = playerResult.rows[0];
-    }
-
-    if (game.status === "waiting") {
-      res.status(200).json({
-        id: game.id,
-        status: game.status,
-        score: player ? player.score : undefined,
-        streak: player ? player.streak : undefined,
-      });
-      return;
-    }
-
-    let totalTermsResult = await pool.query(
-      "SELECT COUNT(*)::int AS total_terms FROM terms WHERE set_id = $1",
-      [game.set_id]
-    );
-    let totalTerms = totalTermsResult.rows[0].total_terms;
-
-    let currentTerm = null;
-    if (game.current_term_id) {
-      let termResult = await pool.query("SELECT id, term FROM terms WHERE id = $1", [game.current_term_id]);
-      currentTerm = termResult.rows[0] || null;
-    }
-
-    let base = {
-      id: game.id,
-      status: game.status,
-      current_term_index: game.current_term_index,
-      total_terms: totalTerms,
-      current_term: currentTerm,
-      choices: game.current_choices || null,
-    };
-
-    if (!player) {
-      res.status(200).json(base);
-      return;
-    }
-
-    let lastAnswer = null;
-    if (game.current_term_id) {
-      let answerResult = await pool.query(
-        "SELECT selected_term_id, is_correct FROM game_answers WHERE game_player_id = $1 AND term_id = $2",
-        [player.id, game.current_term_id]
-      );
-
-      if (answerResult.rows.length > 0) {
-        lastAnswer = {
-          selected_term_id: answerResult.rows[0].selected_term_id,
-          correct_term_id: game.current_term_id,
-          is_correct: answerResult.rows[0].is_correct,
-        };
-      }
-    }
-
-    res.status(200).json({
-      ...base,
-      score: player.score,
-      streak: player.streak,
-      answered: lastAnswer !== null,
-      last_answer: lastAnswer,
-    });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "something went wrong" });
-  }
-});
-
-app.get("/games/:id/leaderboard", requireAuth, (req, res) => {
-  let gameId = req.params.id;
-
-  pool.query(
-    "SELECT id, professor_id, status FROM games WHERE id = $1",
-    [gameId],
       pool.query(
         "SELECT id FROM classroom_students WHERE classroom_id = $1 AND student_id = $2",
         [game.classroom_id, req.session.userId],
@@ -1357,7 +925,7 @@ app.post("/games/:id/end", requireAuth, requireProfessor, (req, res) => {
   let gameId = req.params.id;
 
   pool.query(
-    "UPDATE games SET status = 'finished' WHERE id = $1 AND professor_id = $2 RETURNING id, status",
+    "UPDATE games SET status = 'finished' WHERE id = $1 AND professor_id = $2 RETURNING id, status, professor_id",
     [gameId, req.session.userId],
     (err, result) => {
       if (err) {
@@ -1429,7 +997,6 @@ app.post("/games/:id/end", requireAuth, requireProfessor, (req, res) => {
           fetchLeaderboard(playerResult.rows.length > 0);
         }
       );
-      res.status(200).json(result.rows[0]);
     }
   );
 });
