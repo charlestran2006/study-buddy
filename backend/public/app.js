@@ -629,7 +629,7 @@ function renderChoices(state) {
 
   gameAnswerStatus.classList.toggle("hidden", !state.answered);
   if (state.answered) {
-    gameAnswerStatus.textContent = "Waiting for the professor to move to the next question…";
+    gameAnswerStatus.textContent = "Answer locked in! Waiting for other players to submit...";
   }
 }
 
@@ -637,6 +637,9 @@ async function submitChoice(termId, selectedTermId) {
   Array.from(gameChoices.children).forEach((button) => {
     button.disabled = true;
   });
+
+  gameAnswerStatus.classList.remove("hidden");
+  gameAnswerStatus.textContent = "Submitting answer...";
 
   try {
     let result = await apiRequest(`/games/${studentGameId}/answer`, {
@@ -654,12 +657,13 @@ async function submitChoice(termId, selectedTermId) {
     });
 
     gameAnswerStatus.classList.remove("hidden");
-    gameAnswerStatus.textContent = "Waiting for the professor to move to the next question…";
+    gameAnswerStatus.textContent = "Answer locked in! Waiting for other players to submit...";
   } catch (err) {
     gameStatusMessage.textContent = err.message;
     Array.from(gameChoices.children).forEach((button) => {
       button.disabled = false;
     });
+    gameAnswerStatus.classList.add("hidden");
   }
 }
 
