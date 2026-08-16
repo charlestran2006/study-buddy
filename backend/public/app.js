@@ -180,7 +180,6 @@ document.getElementById("student-logout-button").addEventListener("click", logou
 
 let classroomList = document.getElementById("classroom-list");
 let assignClassroomSelect = document.getElementById("assign-classroom-select");
-let gameClassroomSelect = document.getElementById("game-classroom-select");
 
 async function loadClassrooms() {
   try {
