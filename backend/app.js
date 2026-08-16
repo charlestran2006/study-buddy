@@ -11,20 +11,20 @@ let studyRoutes = require("./routes/study.routes");
 
 let app = express();
 
+let sessionMiddleware = session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+  },
+});
+
 app.use(express.json());
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-    },
-  })
-);
+app.use(sessionMiddleware);
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {
@@ -38,4 +38,5 @@ app.use(setsRoutes);
 app.use(assignmentsRoutes);
 app.use(gamesRoutes);
 
+app.sessionMiddleware = sessionMiddleware;
 module.exports = app;
