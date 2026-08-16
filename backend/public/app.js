@@ -75,17 +75,33 @@ function showStudentDashboard(user) {
   loadMyClassrooms();
 }
 
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    setDashboardMessage("Join code copied to clipboard!", true);
+  }).catch(() => {
+    setDashboardMessage("Failed to copy join code.");
+  });
+}
+
 document.getElementById("login-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   let form = event.target;
   let button = form.querySelector("button");
+
+  let username = form.username.value.trim();
+  let password = form.password.value;
+
+  if (!username || !password) {
+    setMessage("Please fill out all fields.");
+    return;
+  }
+
   button.disabled = true;
+  let originalButtonText = button.textContent;
+  button.textContent = "Logging in...";
 
   try {
-    let user = await submitForm("/login", {
-      username: form.username.value,
-      password: form.password.value,
-    });
+    let user = await submitForm("/login", { username, password });
 
     if (user.role === "professor") {
       showProfessorDashboard(user);
@@ -96,6 +112,7 @@ document.getElementById("login-form").addEventListener("submit", async (event) =
     setMessage(err.message);
   } finally {
     button.disabled = false;
+    button.textContent = originalButtonText;
   }
 });
 
@@ -103,20 +120,30 @@ document.getElementById("signup-form").addEventListener("submit", async (event) 
   event.preventDefault();
   let form = event.target;
   let button = form.querySelector("button");
+
+  let username = form.username.value.trim();
+  let email = form.email.value.trim();
+  let password = form.password.value;
+  let role = form.role.value;
+
+  if (!username || !email || !password || !role) {
+    setMessage("Please fill out all required fields.");
+    return;
+  }
+
+  if (password.length < 6) {
+    setMessage("Password must be at least 6 characters long.");
+    return;
+  }
+
   button.disabled = true;
+  let originalButtonText = button.textContent;
+  button.textContent = "Creating Account...";
 
   try {
-    await submitForm("/signup", {
-      username: form.username.value,
-      email: form.email.value,
-      password: form.password.value,
-      role: form.role.value,
-    });
+    await submitForm("/signup", { username, email, password, role });
 
-    let user = await submitForm("/login", {
-      username: form.username.value,
-      password: form.password.value,
-    });
+    let user = await submitForm("/login", { username, password });
 
     if (user.role === "professor") {
       showProfessorDashboard(user);
@@ -127,6 +154,7 @@ document.getElementById("signup-form").addEventListener("submit", async (event) 
     setMessage(err.message);
   } finally {
     button.disabled = false;
+    button.textContent = originalButtonText;
   }
 });
 
@@ -134,7 +162,6 @@ async function logout() {
   try {
     await apiRequest("/logout", { method: "POST" });
   } catch (err) {
-    // ignore, clear the UI regardless
   }
   if (hostSocket) hostSocket.close();
   if (playerSocket) playerSocket.close();
@@ -151,11 +178,9 @@ async function logout() {
 document.getElementById("logout-button").addEventListener("click", logout);
 document.getElementById("student-logout-button").addEventListener("click", logout);
 
-// --- Classrooms ---
-
 let classroomList = document.getElementById("classroom-list");
 let assignClassroomSelect = document.getElementById("assign-classroom-select");
-let hostClassroomSelect = document.getElementById("host-classroom-select");
+let gameClassroomSelect = document.getElementById("game-classroom-select");
 
 async function loadClassrooms() {
   try {
@@ -165,8 +190,6 @@ async function loadClassrooms() {
     setDashboardMessage(err.message);
   }
 }
-
-let gameClassroomSelect = document.getElementById("game-classroom-select");
 
 function renderClassrooms(classrooms) {
   classroomList.innerHTML = "";
@@ -180,13 +203,22 @@ function renderClassrooms(classrooms) {
   classrooms.forEach((classroom) => {
     let item = document.createElement("li");
     item.className = "classroom-item";
+    
+    let joinCodeSpan = document.createElement("span");
+    joinCodeSpan.className = "join-code";
+    joinCodeSpan.textContent = classroom.join_code;
+    joinCodeSpan.style.cursor = "pointer";
+    joinCodeSpan.title = "Click to copy join code";
+    joinCodeSpan.addEventListener("click", () => copyToClipboard(classroom.join_code));
+
     item.innerHTML = `
       <div class="classroom-name">${escapeHtml(classroom.name)}</div>
       <div class="classroom-meta">
         ${classroom.student_count} student${classroom.student_count === 1 ? "" : "s"} &middot;
-        join code <span class="join-code">${escapeHtml(classroom.join_code)}</span>
+        join code 
       </div>
     `;
+    item.querySelector(".classroom-meta").appendChild(joinCodeSpan);
     classroomList.appendChild(item);
 
     let option = document.createElement("option");
@@ -218,8 +250,6 @@ document.getElementById("create-classroom-form").addEventListener("submit", asyn
     button.disabled = false;
   }
 });
-
-// --- Study sets ---
 
 let termRows = document.getElementById("term-rows");
 let assignSetSelect = document.getElementById("assign-set-select");
@@ -305,8 +335,6 @@ document.getElementById("create-set-form").addEventListener("submit", async (eve
   }
 });
 
-// --- Assignments ---
-
 document.getElementById("assign-set-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   let form = event.target;
@@ -325,8 +353,6 @@ document.getElementById("assign-set-form").addEventListener("submit", async (eve
     button.disabled = false;
   }
 });
-
-// --- Games (professor) ---
 
 let activeGame = document.getElementById("active-game");
 let gameJoinCode = document.getElementById("game-join-code");
@@ -354,7 +380,6 @@ async function loadLeaderboard(gameId, listEl) {
     let data = await apiRequest(`/games/${gameId}/leaderboard`);
     renderLeaderboard(data.players, listEl);
   } catch (err) {
-    // ignore transient errors while polling
   }
 }
 
@@ -398,7 +423,6 @@ function renderProfessorGame(game) {
     return;
   }
 
-  // finished
   hostQuestion.classList.add("hidden");
   gameLeaderboardList.classList.remove("hidden");
   loadLeaderboard(game.id, gameLeaderboardList);
@@ -441,7 +465,10 @@ document.getElementById("create-game-form").addEventListener("submit", async (ev
   button.disabled = true;
 
   try {
-    let game = await submitForm("/games", { set_id: form.set_id.value });
+    let game = await submitForm("/games", {
+      classroom_id: form.classroom_id.value,
+      set_id: form.set_id.value,
+    });
     gameJoinCode.textContent = game.join_code;
     startGameButton.disabled = false;
     activeGame.classList.remove("hidden");
@@ -485,8 +512,6 @@ nextQuestionButton.addEventListener("click", async () => {
     nextQuestionButton.disabled = false;
   }
 });
-
-// --- Student: my classrooms ---
 
 let myClassroomList = document.getElementById("my-classroom-list");
 let gameClassroomSelect = document.getElementById("game-classroom-select");
@@ -542,8 +567,6 @@ document.getElementById("join-classroom-form").addEventListener("submit", async 
     button.disabled = false;
   }
 });
-
-// --- Games (student) ---
 
 let gameStatusMessage = document.getElementById("game-status-message");
 let gamePlayPanel = document.getElementById("game-play-panel");
@@ -617,7 +640,7 @@ function renderChoices(state) {
 
   gameAnswerStatus.classList.toggle("hidden", !state.answered);
   if (state.answered) {
-    gameAnswerStatus.textContent = "Waiting for the professor to move to the next question…";
+    gameAnswerStatus.textContent = "Answer locked in! Waiting for other players to submit...";
   }
 }
 
@@ -625,6 +648,9 @@ async function submitChoice(termId, selectedTermId) {
   Array.from(gameChoices.children).forEach((button) => {
     button.disabled = true;
   });
+
+  gameAnswerStatus.classList.remove("hidden");
+  gameAnswerStatus.textContent = "Submitting answer...";
 
   try {
     let result = await apiRequest(`/games/${studentGameId}/answer`, {
@@ -642,12 +668,13 @@ async function submitChoice(termId, selectedTermId) {
     });
 
     gameAnswerStatus.classList.remove("hidden");
-    gameAnswerStatus.textContent = "Waiting for the professor to move to the next question…";
+    gameAnswerStatus.textContent = "Answer locked in! Waiting for other players to submit...";
   } catch (err) {
     gameStatusMessage.textContent = err.message;
     Array.from(gameChoices.children).forEach((button) => {
       button.disabled = false;
     });
+    gameAnswerStatus.classList.add("hidden");
   }
 }
 
@@ -695,196 +722,4 @@ function escapeHtml(str) {
   let div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
-}
-
-// --- Live Game ---
-
-function wsUrl(classroomId) {
-  let protocol = location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${location.host}/ws?classroomId=${classroomId}`;
-}
-
-function renderPlayerList(el, players) {
-  el.innerHTML = "";
-  if (players.length === 0) {
-    el.innerHTML = '<li class="empty-state">No players yet.</li>';
-    return;
-  }
-  players.forEach((p) => {
-    let item = document.createElement("li");
-    item.textContent = `${p.username} — ${p.score} pts`;
-    el.appendChild(item);
-  });
-}
-
-function renderLeaderboard(el, leaderboard) {
-  el.innerHTML = "";
-  leaderboard.forEach((p) => {
-    let item = document.createElement("li");
-    item.textContent = `${p.username} — ${p.score} pts`;
-    el.appendChild(item);
-  });
-}
-
-// --- Live Game (host) ---
-
-let hostGameForm = document.getElementById("host-game-form");
-let hostGameLive = document.getElementById("host-game-live");
-let hostGameStatus = document.getElementById("host-game-status");
-let hostPlayerList = document.getElementById("host-player-list");
-let hostQuestionView = document.getElementById("host-question-view");
-let hostQuestionTerm = document.getElementById("host-question-term");
-let hostQuestionMeta = document.getElementById("host-question-meta");
-let hostLeaderboardView = document.getElementById("host-leaderboard-view");
-let hostLeaderboardList = document.getElementById("host-leaderboard-list");
-let hostSocket = null;
-
-hostGameForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  let form = event.target;
-  let classroomId = form.classroom_id.value;
-  let setId = form.set_id.value;
-
-  if (hostSocket) hostSocket.close();
-
-  hostGameStatus.textContent = "Connecting...";
-  hostGameLive.classList.remove("hidden");
-
-  hostSocket = new WebSocket(wsUrl(classroomId));
-
-  hostSocket.addEventListener("open", () => {
-    hostGameStatus.textContent = "Connected. Starting game...";
-    hostSocket.send(JSON.stringify({ type: "start_game", setId: Number(setId) }));
-  });
-
-  hostSocket.addEventListener("message", (event) => {
-    handleHostMessage(JSON.parse(event.data));
-  });
-
-  hostSocket.addEventListener("close", () => {
-    hostGameStatus.textContent = "Disconnected.";
-  });
-
-  hostSocket.addEventListener("error", () => {
-    hostGameStatus.textContent = "Connection error.";
-  });
-});
-
-function handleHostMessage(message) {
-  if (message.type === "room_state" || message.type === "players_update") {
-    renderPlayerList(hostPlayerList, message.players);
-  } else if (message.type === "question") {
-    hostQuestionView.classList.remove("hidden");
-    hostLeaderboardView.classList.add("hidden");
-    hostQuestionTerm.textContent = message.term;
-    hostQuestionMeta.textContent = `Question ${message.index + 1} of ${message.total}`;
-    hostGameStatus.textContent = "Question live.";
-  } else if (message.type === "reveal") {
-    hostGameStatus.textContent = "Revealing answer...";
-    renderLeaderboard(hostLeaderboardList, message.leaderboard);
-    hostLeaderboardView.classList.remove("hidden");
-  } else if (message.type === "game_over") {
-    hostQuestionView.classList.add("hidden");
-    hostGameStatus.textContent = "Game over!";
-    renderLeaderboard(hostLeaderboardList, message.leaderboard);
-    hostLeaderboardView.classList.remove("hidden");
-  } else if (message.type === "error") {
-    hostGameStatus.textContent = message.message;
-  }
-}
-
-document.getElementById("host-end-game-button").addEventListener("click", () => {
-  if (hostSocket) {
-    hostSocket.send(JSON.stringify({ type: "end_game" }));
-  }
-});
-
-// --- Live Game (player) ---
-
-let joinGameForm = document.getElementById("join-game-form");
-let playerGameLive = document.getElementById("player-game-live");
-let playerGameStatus = document.getElementById("player-game-status");
-let playerQuestionView = document.getElementById("player-question-view");
-let playerQuestionTerm = document.getElementById("player-question-term");
-let playerChoices = document.getElementById("player-choices");
-let playerLeaderboardView = document.getElementById("player-leaderboard-view");
-let playerLeaderboardList = document.getElementById("player-leaderboard-list");
-let playerSocket = null;
-let hasAnsweredCurrent = false;
-
-joinGameForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  let form = event.target;
-  let classroomId = form.classroom_id.value;
-
-  if (playerSocket) playerSocket.close();
-
-  playerGameStatus.textContent = "Connecting...";
-  playerGameLive.classList.remove("hidden");
-
-  playerSocket = new WebSocket(wsUrl(classroomId));
-
-  playerSocket.addEventListener("open", () => {
-    playerGameStatus.textContent = "Connected. Waiting for the host to start...";
-  });
-
-  playerSocket.addEventListener("message", (event) => {
-    handlePlayerMessage(JSON.parse(event.data));
-  });
-
-  playerSocket.addEventListener("close", () => {
-    playerGameStatus.textContent = "Disconnected.";
-  });
-
-  playerSocket.addEventListener("error", () => {
-    playerGameStatus.textContent = "Connection error.";
-  });
-});
-
-function handlePlayerMessage(message) {
-  if (message.type === "question") {
-    hasAnsweredCurrent = false;
-    playerQuestionView.classList.remove("hidden");
-    playerLeaderboardView.classList.add("hidden");
-    playerQuestionTerm.textContent = message.term;
-    playerGameStatus.textContent = `Question ${message.index + 1} of ${message.total}`;
-    renderChoices(message.choices);
-  } else if (message.type === "answer_ack") {
-    playerGameStatus.textContent = "Answer submitted. Waiting for reveal...";
-  } else if (message.type === "reveal") {
-    playerGameStatus.textContent = "Answer revealed.";
-    Array.from(playerChoices.children).forEach((button, index) => {
-      button.disabled = true;
-      if (index === message.correctIndex) {
-        button.classList.add("correct");
-      }
-    });
-    renderLeaderboard(playerLeaderboardList, message.leaderboard);
-    playerLeaderboardView.classList.remove("hidden");
-  } else if (message.type === "game_over") {
-    playerQuestionView.classList.add("hidden");
-    playerGameStatus.textContent = "Game over!";
-    renderLeaderboard(playerLeaderboardList, message.leaderboard);
-    playerLeaderboardView.classList.remove("hidden");
-  } else if (message.type === "error") {
-    playerGameStatus.textContent = message.message;
-  }
-}
-
-function renderChoices(choices) {
-  playerChoices.innerHTML = "";
-  choices.forEach((choice, index) => {
-    let button = document.createElement("button");
-    button.type = "button";
-    button.className = "choice-button";
-    button.textContent = choice;
-    button.addEventListener("click", () => {
-      if (hasAnsweredCurrent) return;
-      hasAnsweredCurrent = true;
-      Array.from(playerChoices.children).forEach((b) => b.classList.remove("selected"));
-      button.classList.add("selected");
-      playerSocket.send(JSON.stringify({ type: "answer", choiceIndex: index }));
-    });
-    playerChoices.appendChild(button);
-  });
 }
