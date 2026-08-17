@@ -3,6 +3,7 @@ import { setDashboardMessage, escapeHtml, copyToClipboard } from "./dom.js";
 
 let classroomList = document.getElementById("classroom-list");
 let assignClassroomSelect = document.getElementById("assign-classroom-select");
+let hostClassroomSelect = document.getElementById("host-classroom-select");
 
 export async function loadClassrooms() {
   try {

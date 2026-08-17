@@ -136,8 +136,6 @@ async function logout() {
     await apiRequest("/logout", { method: "POST" });
   } catch (err) {
   }
-  if (hostSocket) hostSocket.close();
-  if (playerSocket) playerSocket.close();
   logoutCleanupFns.forEach((fn) => fn());
   dashboardView.classList.add("hidden");
   studentDashboardView.classList.add("hidden");
