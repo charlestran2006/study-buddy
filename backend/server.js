@@ -298,6 +298,7 @@ app.get("/classrooms/:id", requireAuth, requireProfessor, (req, res) => {
   );
 });
 
+
 app.post("/classrooms/join", requireAuth, requireStudent, (req, res) => {
   let code = req.body.code;
 
