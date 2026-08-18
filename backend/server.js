@@ -1,4 +1,5 @@
 require("dotenv").config();
+<<<<<<< HEAD
 let express = require("express");
 let bcrypt = require("bcrypt");
 let session = require("express-session");
@@ -9,11 +10,22 @@ let { WebSocketServer } = require("ws");
 let { pool } = require("./db");
 const studyRoutes = require('./study_routes');
 const createGameManager = require("./game");
+=======
+<<<<<<< HEAD
+let app = require("./app");
+=======
+let http = require("http");
+let { WebSocketServer } = require("ws");
+let app = require("./app");
+let { pool } = require("./db");
+let createGameManager = require("./game");
+>>>>>>> a500411f4be48ceb6c4b0f6d96aeb512920ef576
+>>>>>>> main
 
-let app = express();
 let port = process.env.PORT || 3000;
 let hostname = "0.0.0.0";
 
+<<<<<<< HEAD
 let sessionMiddleware = session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -490,12 +502,21 @@ app.post("/assignments", requireAuth, requireProfessor, (req, res) => {
   );
 });
 
+=======
+<<<<<<< HEAD
+app.listen(port, hostname, () => {
+=======
+>>>>>>> main
 let httpServer = http.createServer(app);
 let wss = new WebSocketServer({ noServer: true });
 let gameManager = createGameManager(pool);
 
 httpServer.on("upgrade", (req, socket, head) => {
+<<<<<<< HEAD
   sessionMiddleware(req, {}, () => {
+=======
+  app.sessionMiddleware(req, {}, () => {
+>>>>>>> main
     if (!req.session || !req.session.userId) {
       socket.destroy();
       return;
@@ -512,5 +533,9 @@ wss.on("connection", (ws, req) => {
 });
 
 httpServer.listen(port, hostname, () => {
+<<<<<<< HEAD
+=======
+>>>>>>> a500411f4be48ceb6c4b0f6d96aeb512920ef576
+>>>>>>> main
   console.log(`http://${hostname}:${port}`);
 });

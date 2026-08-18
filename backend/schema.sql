@@ -65,3 +65,37 @@ CREATE TABLE assignments (
   assigned_at TIMESTAMP DEFAULT NOW(),
   UNIQUE (set_id, classroom_id)
 );
+
+CREATE TABLE games (
+  id SERIAL PRIMARY KEY,
+  classroom_id INTEGER REFERENCES classrooms(id),
+  set_id INTEGER REFERENCES sets(id),
+  professor_id INTEGER REFERENCES users(id),
+  join_code TEXT UNIQUE NOT NULL,
+  status TEXT NOT NULL DEFAULT 'waiting' CHECK (status IN ('waiting', 'active', 'finished')),
+  current_term_index INTEGER DEFAULT 0,
+  current_term_id INTEGER REFERENCES terms(id),
+  current_choices JSONB,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE game_players (
+  id SERIAL PRIMARY KEY,
+  game_id INTEGER REFERENCES games(id),
+  student_id INTEGER REFERENCES users(id),
+  score INTEGER NOT NULL DEFAULT 0,
+  streak INTEGER NOT NULL DEFAULT 0,
+  joined_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE (game_id, student_id)
+);
+
+CREATE TABLE game_answers (
+  id SERIAL PRIMARY KEY,
+  game_player_id INTEGER NOT NULL REFERENCES game_players(id),
+  term_id INTEGER NOT NULL REFERENCES terms(id),
+  selected_term_id INTEGER REFERENCES terms(id),
+  is_correct BOOLEAN NOT NULL,
+  points_awarded INTEGER NOT NULL DEFAULT 0,
+  answered_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE (game_player_id, term_id)
+);

@@ -136,8 +136,15 @@ async function logout() {
   } catch (err) {
     // ignore, clear the UI regardless
   }
+<<<<<<< HEAD
   if (hostSocket) hostSocket.close();
   if (playerSocket) playerSocket.close();
+=======
+  stopGamePolling();
+  stopStudentGamePolling();
+  activeGame.classList.add("hidden");
+  gamePlayPanel.classList.add("hidden");
+>>>>>>> main
   dashboardView.classList.add("hidden");
   studentDashboardView.classList.add("hidden");
   authView.classList.remove("hidden");
@@ -162,10 +169,16 @@ async function loadClassrooms() {
   }
 }
 
+let gameClassroomSelect = document.getElementById("game-classroom-select");
+
 function renderClassrooms(classrooms) {
   classroomList.innerHTML = "";
   assignClassroomSelect.innerHTML = "";
+<<<<<<< HEAD
   hostClassroomSelect.innerHTML = "";
+=======
+  gameClassroomSelect.innerHTML = "";
+>>>>>>> main
 
   if (classrooms.length === 0) {
     classroomList.innerHTML = '<li class="empty-state">No classrooms yet.</li>';
@@ -188,10 +201,17 @@ function renderClassrooms(classrooms) {
     option.textContent = classroom.name;
     assignClassroomSelect.appendChild(option);
 
+<<<<<<< HEAD
     let hostOption = document.createElement("option");
     hostOption.value = classroom.id;
     hostOption.textContent = classroom.name;
     hostClassroomSelect.appendChild(hostOption);
+=======
+    let gameOption = document.createElement("option");
+    gameOption.value = classroom.id;
+    gameOption.textContent = classroom.name;
+    gameClassroomSelect.appendChild(gameOption);
+>>>>>>> main
   });
 }
 
@@ -217,7 +237,11 @@ document.getElementById("create-classroom-form").addEventListener("submit", asyn
 
 let termRows = document.getElementById("term-rows");
 let assignSetSelect = document.getElementById("assign-set-select");
+<<<<<<< HEAD
 let hostSetSelect = document.getElementById("host-set-select");
+=======
+let gameSetSelect = document.getElementById("game-set-select");
+>>>>>>> main
 
 function addTermRow() {
   let row = document.createElement("div");
@@ -246,7 +270,11 @@ async function loadSets() {
 
 function renderSets(sets) {
   assignSetSelect.innerHTML = "";
+<<<<<<< HEAD
   hostSetSelect.innerHTML = "";
+=======
+  gameSetSelect.innerHTML = "";
+>>>>>>> main
 
   sets.forEach((set) => {
     let option = document.createElement("option");
@@ -254,10 +282,15 @@ function renderSets(sets) {
     option.textContent = set.title;
     assignSetSelect.appendChild(option);
 
+<<<<<<< HEAD
     let hostOption = document.createElement("option");
     hostOption.value = set.id;
     hostOption.textContent = set.title;
     hostSetSelect.appendChild(hostOption);
+=======
+    let gameOption = option.cloneNode(true);
+    gameSetSelect.appendChild(gameOption);
+>>>>>>> main
   });
 }
 
@@ -320,6 +353,166 @@ document.getElementById("assign-set-form").addEventListener("submit", async (eve
   }
 });
 
+// --- Games (professor) ---
+
+let activeGame = document.getElementById("active-game");
+let gameJoinCode = document.getElementById("game-join-code");
+let gamePlayerCount = document.getElementById("game-player-count");
+let startGameButton = document.getElementById("start-game-button");
+let hostQuestion = document.getElementById("host-question");
+let gameProgress = document.getElementById("game-progress");
+let hostTerm = document.getElementById("host-term");
+let hostTally = document.getElementById("host-tally");
+let hostAnsweredCount = document.getElementById("host-answered-count");
+let nextQuestionButton = document.getElementById("next-question-button");
+let gameLeaderboardList = document.getElementById("game-leaderboard");
+let gamePollInterval = null;
+let currentGameId = null;
+
+function stopGamePolling() {
+  if (gamePollInterval) {
+    clearInterval(gamePollInterval);
+    gamePollInterval = null;
+  }
+}
+
+async function loadLeaderboard(gameId, listEl) {
+  try {
+    let data = await apiRequest(`/games/${gameId}/leaderboard`);
+    renderLeaderboard(data.players, listEl);
+  } catch (err) {
+    // ignore transient errors while polling
+  }
+}
+
+function renderLeaderboard(players, listEl) {
+  listEl.innerHTML = "";
+
+  if (players.length === 0) {
+    listEl.innerHTML = '<li class="empty-state">No players yet.</li>';
+    return;
+  }
+
+  players.forEach((player) => {
+    let item = document.createElement("li");
+    item.innerHTML = `
+      <span><span class="rank">#${player.rank}</span>${escapeHtml(player.username)}</span>
+      <span>${player.score} pts</span>
+    `;
+    listEl.appendChild(item);
+  });
+}
+
+function renderProfessorGame(game) {
+  gamePlayerCount.textContent = `${game.player_count} player${game.player_count === 1 ? "" : "s"} joined`;
+
+  if (game.status === "waiting") {
+    startGameButton.classList.remove("hidden");
+    hostQuestion.classList.add("hidden");
+    gameLeaderboardList.classList.add("hidden");
+    return;
+  }
+
+  startGameButton.classList.add("hidden");
+
+  if (game.status === "active") {
+    hostQuestion.classList.remove("hidden");
+    gameLeaderboardList.classList.add("hidden");
+    gameProgress.textContent = `Question ${game.current_term_index + 1} of ${game.total_terms}`;
+    hostTerm.textContent = game.current_term ? game.current_term.term : "";
+    renderHostTally(game.choices || []);
+    hostAnsweredCount.textContent = `${game.answered_count} of ${game.player_count} answered · ${game.correct_count} correct`;
+    return;
+  }
+
+  // finished
+  hostQuestion.classList.add("hidden");
+  gameLeaderboardList.classList.remove("hidden");
+  loadLeaderboard(game.id, gameLeaderboardList);
+}
+
+function renderHostTally(choices) {
+  hostTally.innerHTML = "";
+  choices.forEach((choice) => {
+    let item = document.createElement("li");
+    item.textContent = choice.definition;
+    hostTally.appendChild(item);
+  });
+}
+
+function pollGame(gameId) {
+  stopGamePolling();
+  currentGameId = gameId;
+
+  let poll = async () => {
+    try {
+      let game = await apiRequest(`/games/${gameId}`);
+      renderProfessorGame(game);
+
+      if (game.status === "finished") {
+        stopGamePolling();
+      }
+    } catch (err) {
+      stopGamePolling();
+    }
+  };
+
+  poll();
+  gamePollInterval = setInterval(poll, 3000);
+}
+
+document.getElementById("create-game-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  let form = event.target;
+  let button = form.querySelector("button");
+  button.disabled = true;
+
+  try {
+    let game = await submitForm("/games", { set_id: form.set_id.value });
+    gameJoinCode.textContent = game.join_code;
+    startGameButton.disabled = false;
+    activeGame.classList.remove("hidden");
+    setDashboardMessage("Game created.", true);
+    pollGame(game.id);
+  } catch (err) {
+    setDashboardMessage(err.message);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+startGameButton.addEventListener("click", async () => {
+  if (!currentGameId) {
+    return;
+  }
+
+  startGameButton.disabled = true;
+
+  try {
+    await apiRequest(`/games/${currentGameId}/start`, { method: "POST" });
+    setDashboardMessage("Game started.", true);
+  } catch (err) {
+    setDashboardMessage(err.message);
+    startGameButton.disabled = false;
+  }
+});
+
+nextQuestionButton.addEventListener("click", async () => {
+  if (!currentGameId) {
+    return;
+  }
+
+  nextQuestionButton.disabled = true;
+
+  try {
+    await apiRequest(`/games/${currentGameId}/next`, { method: "POST" });
+  } catch (err) {
+    setDashboardMessage(err.message);
+  } finally {
+    nextQuestionButton.disabled = false;
+  }
+});
+
 // --- Student: my classrooms ---
 
 let myClassroomList = document.getElementById("my-classroom-list");
@@ -372,6 +565,154 @@ document.getElementById("join-classroom-form").addEventListener("submit", async 
     loadMyClassrooms();
   } catch (err) {
     setStudentDashboardMessage(err.message);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+// --- Games (student) ---
+
+let gameStatusMessage = document.getElementById("game-status-message");
+let gamePlayPanel = document.getElementById("game-play-panel");
+let gameWaiting = document.getElementById("game-waiting");
+let gameQuestion = document.getElementById("game-question");
+let gameFinished = document.getElementById("game-finished");
+let gameProgressLine = document.getElementById("game-progress-line");
+let gameTermEl = document.getElementById("game-term");
+let gameChoices = document.getElementById("game-choices");
+let gameAnswerStatus = document.getElementById("game-answer-status");
+let gameFinalLeaderboard = document.getElementById("game-final-leaderboard");
+let studentGamePollInterval = null;
+let studentGameId = null;
+
+function stopStudentGamePolling() {
+  if (studentGamePollInterval) {
+    clearInterval(studentGamePollInterval);
+    studentGamePollInterval = null;
+  }
+}
+
+function showGamePane(pane) {
+  [gameWaiting, gameQuestion, gameFinished].forEach((el) => {
+    el.classList.toggle("hidden", el !== pane);
+  });
+}
+
+function renderStudentGame(state) {
+  if (state.status === "waiting") {
+    showGamePane(gameWaiting);
+    return;
+  }
+
+  if (state.status === "finished") {
+    showGamePane(gameFinished);
+    loadLeaderboard(studentGameId, gameFinalLeaderboard);
+    return;
+  }
+
+  showGamePane(gameQuestion);
+  gameProgressLine.textContent = `Question ${state.current_term_index + 1} of ${state.total_terms}`;
+  gameTermEl.textContent = state.current_term ? state.current_term.term : "";
+  renderChoices(state);
+}
+
+function renderChoices(state) {
+  gameChoices.innerHTML = "";
+  let termId = state.current_term ? state.current_term.id : null;
+  let lastAnswer = state.last_answer;
+
+  (state.choices || []).forEach((choice) => {
+    let button = document.createElement("button");
+    button.type = "button";
+    button.className = "choice-button";
+    button.textContent = choice.definition;
+    button.dataset.termId = choice.term_id;
+
+    if (state.answered) {
+      button.disabled = true;
+      if (lastAnswer && choice.term_id === lastAnswer.correct_term_id) {
+        button.classList.add("correct");
+      } else if (lastAnswer && choice.term_id === lastAnswer.selected_term_id) {
+        button.classList.add("incorrect");
+      }
+    } else {
+      button.addEventListener("click", () => submitChoice(termId, choice.term_id));
+    }
+
+    gameChoices.appendChild(button);
+  });
+
+  gameAnswerStatus.classList.toggle("hidden", !state.answered);
+  if (state.answered) {
+    gameAnswerStatus.textContent = "Waiting for the professor to move to the next question…";
+  }
+}
+
+async function submitChoice(termId, selectedTermId) {
+  Array.from(gameChoices.children).forEach((button) => {
+    button.disabled = true;
+  });
+
+  try {
+    let result = await apiRequest(`/games/${studentGameId}/answer`, {
+      method: "POST",
+      body: JSON.stringify({ term_id: termId, selected_term_id: selectedTermId }),
+    });
+
+    Array.from(gameChoices.children).forEach((button) => {
+      let choiceTermId = Number(button.dataset.termId);
+      if (choiceTermId === result.correct_term_id) {
+        button.classList.add("correct");
+      } else if (choiceTermId === selectedTermId) {
+        button.classList.add("incorrect");
+      }
+    });
+
+    gameAnswerStatus.classList.remove("hidden");
+    gameAnswerStatus.textContent = "Waiting for the professor to move to the next question…";
+  } catch (err) {
+    gameStatusMessage.textContent = err.message;
+    Array.from(gameChoices.children).forEach((button) => {
+      button.disabled = false;
+    });
+  }
+}
+
+function pollStudentGame(gameId) {
+  stopStudentGamePolling();
+  studentGameId = gameId;
+  gamePlayPanel.classList.remove("hidden");
+
+  let poll = async () => {
+    try {
+      let state = await apiRequest(`/games/${gameId}/state`);
+      renderStudentGame(state);
+
+      if (state.status === "finished") {
+        stopStudentGamePolling();
+      }
+    } catch (err) {
+      stopStudentGamePolling();
+    }
+  };
+
+  poll();
+  studentGamePollInterval = setInterval(poll, 1500);
+}
+
+document.getElementById("join-game-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  let form = event.target;
+  let button = form.querySelector("button");
+  button.disabled = true;
+
+  try {
+    let game = await submitForm("/games/join", { code: form.code.value });
+    form.reset();
+    gameStatusMessage.textContent = "Joined! Waiting for the professor to start.";
+    pollStudentGame(game.id);
+  } catch (err) {
+    gameStatusMessage.textContent = err.message;
   } finally {
     button.disabled = false;
   }
