@@ -5,6 +5,7 @@ let { generateJoinCode } = require("../utils/joinCode");
 
 let router = express.Router();
 
+<<<<<<< HEAD
 const CORRECT_BASE_POINTS = 100;
 const STREAK_BONUS_PER_STEP = 20;
 const STREAK_BONUS_CAP = 100;
@@ -30,6 +31,8 @@ function buildQuestion(terms, termIndex) {
   return { termId: correctTerm.id, choices };
 }
 
+=======
+>>>>>>> a500411f4be48ceb6c4b0f6d96aeb512920ef576
 async function fetchGameTerms(setId) {
   let result = await pool.query(
     "SELECT id, term, definition FROM terms WHERE set_id = $1 ORDER BY position ASC",
@@ -40,8 +43,14 @@ async function fetchGameTerms(setId) {
 
 router.post("/games", requireAuth, requireProfessor, async (req, res) => {
   let setId = req.body.set_id;
+<<<<<<< HEAD
 
   if (!setId) {
+=======
+  let classroomId = req.body.classroom_id;
+
+  if (!setId || !classroomId) {
+>>>>>>> a500411f4be48ceb6c4b0f6d96aeb512920ef576
     res.status(400).json({ error: "missing fields" });
     return;
   }
@@ -57,6 +66,19 @@ router.post("/games", requireAuth, requireProfessor, async (req, res) => {
       return;
     }
 
+<<<<<<< HEAD
+=======
+    let classroomResult = await pool.query(
+      "SELECT id FROM classrooms WHERE id = $1 AND professor_id = $2",
+      [classroomId, req.session.userId]
+    );
+
+    if (classroomResult.rows.length === 0) {
+      res.status(404).json({ error: "classroom not found" });
+      return;
+    }
+
+>>>>>>> a500411f4be48ceb6c4b0f6d96aeb512920ef576
     let termCountResult = await pool.query(
       "SELECT COUNT(*)::int AS count FROM terms WHERE set_id = $1",
       [setId]
@@ -70,8 +92,13 @@ router.post("/games", requireAuth, requireProfessor, async (req, res) => {
     let joinCode = generateJoinCode();
 
     let result = await pool.query(
+<<<<<<< HEAD
       "INSERT INTO games (set_id, professor_id, join_code) VALUES ($1, $2, $3) RETURNING id, set_id, join_code, status, current_term_index, created_at",
       [setId, req.session.userId, joinCode]
+=======
+      "INSERT INTO games (set_id, classroom_id, professor_id, join_code) VALUES ($1, $2, $3, $4) RETURNING id, set_id, classroom_id, join_code, status, current_term_index, created_at",
+      [setId, classroomId, req.session.userId, joinCode]
+>>>>>>> a500411f4be48ceb6c4b0f6d96aeb512920ef576
     );
 
     res.status(200).json(result.rows[0]);
@@ -91,8 +118,13 @@ router.post("/games/join", requireAuth, requireStudent, async (req, res) => {
 
   try {
     let gameResult = await pool.query(
+<<<<<<< HEAD
       "SELECT id, status FROM games WHERE join_code = $1",
       [code.toUpperCase()]
+=======
+      "SELECT id, classroom_id, status FROM games WHERE join_code = $1",
+      [code.trim().toUpperCase()]
+>>>>>>> a500411f4be48ceb6c4b0f6d96aeb512920ef576
     );
 
     if (gameResult.rows.length === 0) {
@@ -102,6 +134,7 @@ router.post("/games/join", requireAuth, requireStudent, async (req, res) => {
 
     let game = gameResult.rows[0];
 
+<<<<<<< HEAD
     if (game.status !== "waiting") {
       res.status(400).json({ error: "game has already started" });
       return;
@@ -118,6 +151,25 @@ router.post("/games/join", requireAuth, requireStudent, async (req, res) => {
       res.status(400).json({ error: "already joined this game" });
       return;
     }
+=======
+    if (game.status === "finished") {
+      res.status(400).json({ error: "this game has already ended" });
+      return;
+    }
+
+    let enrolledResult = await pool.query(
+      "SELECT id FROM classroom_students WHERE classroom_id = $1 AND student_id = $2",
+      [game.classroom_id, req.session.userId]
+    );
+
+    if (enrolledResult.rows.length === 0) {
+      res.status(403).json({ error: "you are not enrolled in this classroom" });
+      return;
+    }
+
+    res.status(200).json({ id: game.id, status: game.status });
+  } catch (err) {
+>>>>>>> a500411f4be48ceb6c4b0f6d96aeb512920ef576
     console.log(err);
     res.status(500).json({ error: "something went wrong" });
   }
@@ -187,6 +239,7 @@ router.get("/games/:id", requireAuth, requireProfessor, async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 router.post("/games/:id/start", requireAuth, requireProfessor, async (req, res) => {
   let gameId = req.params.id;
 
@@ -459,6 +512,8 @@ router.get("/games/:id/state", requireAuth, async (req, res) => {
   }
 });
 
+=======
+>>>>>>> a500411f4be48ceb6c4b0f6d96aeb512920ef576
 router.get("/games/:id/leaderboard", requireAuth, async (req, res) => {
   let gameId = req.params.id;
 
