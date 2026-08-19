@@ -197,6 +197,11 @@ body {
   margin: 16px 32px 0;
 }
 
+.dashboard-tabs {
+  max-width: 1136px;
+  margin: 20px auto 0;
+}
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));

@@ -70,8 +70,15 @@
 
     <p class="message" id="dashboard-message" role="alert"></p>
 
+    <nav class="tabs dashboard-tabs" id="professor-tabs">
+      <button type="button" class="tab active" data-target="panel-prof-classrooms">Classrooms</button>
+      <button type="button" class="tab" data-target="panel-prof-sets">Study Sets</button>
+      <button type="button" class="tab" data-target="panel-prof-assign">Assign</button>
+      <button type="button" class="tab" data-target="panel-prof-game">Live Game</button>
+    </nav>
+
     <main class="dashboard-grid">
-      <section class="panel">
+      <section class="panel" id="panel-prof-classrooms">
         <h2>Your Classrooms</h2>
         <ul id="classroom-list" class="classroom-list"></ul>
 
@@ -82,7 +89,7 @@
         </form>
       </section>
 
-      <section class="panel">
+      <section class="panel hidden" id="panel-prof-sets">
         <h2>Create a Study Set</h2>
         <form id="create-set-form" class="panel-form">
           <label for="set-title">Title</label>
@@ -98,7 +105,7 @@
         </form>
       </section>
 
-      <section class="panel">
+      <section class="panel hidden" id="panel-prof-assign">
         <h2>Assign a Study Set</h2>
         <form id="assign-set-form" class="panel-form">
           <label for="assign-set-select">Study set</label>
@@ -111,7 +118,7 @@
         </form>
       </section>
 
-      <section class="panel">
+      <section class="panel hidden" id="panel-prof-game">
         <h2>Live Game</h2>
         <form id="host-game-form" class="panel-form">
           <label for="host-classroom-select">Classroom</label>
@@ -156,13 +163,19 @@
 
     <p class="message" id="student-dashboard-message" role="alert"></p>
 
+    <nav class="tabs dashboard-tabs" id="student-tabs">
+      <button type="button" class="tab active" data-target="panel-stu-classrooms">Classrooms</button>
+      <button type="button" class="tab" data-target="panel-stu-join">Join Classroom</button>
+      <button type="button" class="tab" data-target="panel-stu-game">Live Game</button>
+    </nav>
+
     <main class="dashboard-grid">
-      <section class="panel">
+      <section class="panel" id="panel-stu-classrooms">
         <h2>Your Classrooms</h2>
         <ul id="my-classroom-list" class="classroom-list"></ul>
       </section>
 
-      <section class="panel">
+      <section class="panel hidden" id="panel-stu-join">
         <h2>Join a Classroom</h2>
         <form id="join-classroom-form" class="panel-form">
           <label for="join-code">Classroom join code</label>
@@ -171,7 +184,7 @@
         </form>
       </section>
 
-      <section class="panel">
+      <section class="panel hidden" id="panel-stu-game">
         <h2>Live Game</h2>
         <form id="join-game-form" class="panel-form">
           <label for="game-join-code">Game join code</label>
