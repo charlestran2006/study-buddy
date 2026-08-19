@@ -15,14 +15,6 @@ function shuffle(arr) {
 function buildQuestions(terms) {
   return shuffle(terms).map((term) => {
     let wrongPool = terms.filter((t) => t.id !== term.id);
-<<<<<<< HEAD
-    let wrongChoices = shuffle(wrongPool)
-      .slice(0, 3)
-      .map((t) => t.definition);
-
-    let choices = shuffle([term.definition, ...wrongChoices]);
-    let correctIndex = choices.indexOf(term.definition);
-=======
     let wrongChoices = shuffle(wrongPool).slice(0, 3);
 
     let choices = shuffle([term, ...wrongChoices]).map((t) => ({
@@ -30,7 +22,6 @@ function buildQuestions(terms) {
       definition: t.definition,
     }));
     let correctIndex = choices.findIndex((c) => c.termId === term.id);
->>>>>>> main
 
     return {
       termId: term.id,
@@ -42,13 +33,6 @@ function buildQuestions(terms) {
 }
 
 class GameRoom {
-<<<<<<< HEAD
-  constructor(classroomId, professorId) {
-    this.classroomId = classroomId;
-    this.professorId = professorId;
-    this.hosts = new Set();
-    this.players = new Map(); // userId -> { ws, username, score }
-=======
   constructor(gameId, classroomId, professorId, setId, pool) {
     this.gameId = gameId;
     this.classroomId = classroomId;
@@ -57,7 +41,6 @@ class GameRoom {
     this.pool = pool;
     this.hosts = new Set();
     this.players = new Map(); // userId -> { ws, username, score, dbId }
->>>>>>> main
     this.status = "waiting"; // waiting | in_progress | finished
     this.questions = [];
     this.currentIndex = -1;
@@ -79,12 +62,6 @@ class GameRoom {
         players: this.playerList(),
       })
     );
-<<<<<<< HEAD
-  }
-
-  addPlayer(ws, user) {
-    this.players.set(user.id, { ws, username: user.username, score: 0 });
-=======
     this.sendCurrentQuestion(ws);
   }
 
@@ -108,7 +85,6 @@ class GameRoom {
     }
 
     this.players.set(user.id, { ws, username: user.username, score, dbId });
->>>>>>> main
     ws.send(
       JSON.stringify({
         type: "room_state",
@@ -116,11 +92,6 @@ class GameRoom {
         players: this.playerList(),
       })
     );
-<<<<<<< HEAD
-    this.broadcastPlayers();
-  }
-
-=======
     this.sendCurrentQuestion(ws);
     this.broadcastPlayers();
   }
@@ -144,7 +115,6 @@ class GameRoom {
     );
   }
 
->>>>>>> main
   removeClient(ws) {
     this.hosts.delete(ws);
     for (let [userId, player] of this.players) {
@@ -178,13 +148,9 @@ class GameRoom {
     this.broadcast({ type: "players_update", players: this.playerList() });
   }
 
-<<<<<<< HEAD
-  startGame(terms) {
-=======
   async startGame(terms) {
     if (this.status !== "waiting") return;
 
->>>>>>> main
     if (terms.length < 2) {
       this.broadcast({ type: "error", message: "study set needs at least 2 terms" });
       return;
@@ -196,12 +162,6 @@ class GameRoom {
     this.status = "in_progress";
     for (let player of this.players.values()) player.score = 0;
 
-<<<<<<< HEAD
-    this.nextQuestion();
-  }
-
-  nextQuestion() {
-=======
     try {
       await this.pool.query("UPDATE game_players SET score = 0, streak = 0 WHERE game_id = $1", [
         this.gameId,
@@ -214,16 +174,11 @@ class GameRoom {
   }
 
   async nextQuestion() {
->>>>>>> main
     clearTimeout(this.timer);
     this.currentIndex += 1;
 
     if (this.currentIndex >= this.questions.length) {
-<<<<<<< HEAD
-      this.endGame();
-=======
       await this.endGame();
->>>>>>> main
       return;
     }
 
@@ -231,8 +186,6 @@ class GameRoom {
     this.questionStartedAt = Date.now();
     let question = this.questions[this.currentIndex];
 
-<<<<<<< HEAD
-=======
     try {
       await this.pool.query(
         "UPDATE games SET status = 'active', current_term_index = $1, current_term_id = $2, current_choices = $3 WHERE id = $4",
@@ -247,39 +200,23 @@ class GameRoom {
       console.log(err);
     }
 
->>>>>>> main
     this.broadcast({
       type: "question",
       index: this.currentIndex,
       total: this.questions.length,
       term: question.term,
-<<<<<<< HEAD
-      choices: question.choices,
-=======
       choices: question.choices.map((c) => c.definition),
->>>>>>> main
       timeLimit: QUESTION_TIME_MS,
     });
 
     this.timer = setTimeout(() => this.revealAnswer(), QUESTION_TIME_MS);
   }
 
-<<<<<<< HEAD
-  handleAnswer(userId, choiceIndex) {
-=======
   async handleAnswer(userId, choiceIndex) {
->>>>>>> main
     if (this.status !== "in_progress") return;
     if (this.answers.has(userId)) return;
     if (this.currentIndex < 0 || this.currentIndex >= this.questions.length) return;
 
-<<<<<<< HEAD
-    this.answers.set(userId, { choiceIndex, answeredAt: Date.now() });
-
-    let player = this.players.get(userId);
-    if (player) {
-      player.ws.send(JSON.stringify({ type: "answer_ack" }));
-=======
     let question = this.questions[this.currentIndex];
     let choice = question.choices[choiceIndex];
     if (!choice) return;
@@ -312,7 +249,6 @@ class GameRoom {
       }
     } catch (err) {
       console.log(err);
->>>>>>> main
     }
 
     if (this.answers.size >= this.players.size && this.players.size > 0) {
@@ -325,20 +261,6 @@ class GameRoom {
     if (this.currentIndex < 0 || this.currentIndex >= this.questions.length) return;
     let question = this.questions[this.currentIndex];
 
-<<<<<<< HEAD
-    for (let [userId, answer] of this.answers) {
-      let player = this.players.get(userId);
-      if (!player) continue;
-
-      if (answer.choiceIndex === question.correctIndex) {
-        let elapsed = answer.answeredAt - this.questionStartedAt;
-        let remainingRatio = Math.max(0, 1 - elapsed / QUESTION_TIME_MS);
-        player.score += Math.max(100, Math.round(1000 * remainingRatio));
-      }
-    }
-
-=======
->>>>>>> main
     this.broadcast({
       type: "reveal",
       correctIndex: question.correctIndex,
@@ -348,11 +270,6 @@ class GameRoom {
     this.timer = setTimeout(() => this.nextQuestion(), REVEAL_TIME_MS);
   }
 
-<<<<<<< HEAD
-  endGame() {
-    clearTimeout(this.timer);
-    this.status = "finished";
-=======
   async endGame() {
     clearTimeout(this.timer);
     this.status = "finished";
@@ -366,7 +283,6 @@ class GameRoom {
       console.log(err);
     }
 
->>>>>>> main
     this.broadcast({
       type: "game_over",
       leaderboard: this.playerList().sort((a, b) => b.score - a.score),
@@ -375,15 +291,6 @@ class GameRoom {
 }
 
 function createGameManager(pool) {
-<<<<<<< HEAD
-  let rooms = new Map(); // classroomId -> GameRoom
-
-  function getRoom(classroomId, professorId) {
-    let room = rooms.get(classroomId);
-    if (!room) {
-      room = new GameRoom(classroomId, professorId);
-      rooms.set(classroomId, room);
-=======
   let rooms = new Map(); // gameId -> GameRoom
 
   function getRoom(game) {
@@ -391,77 +298,10 @@ function createGameManager(pool) {
     if (!room) {
       room = new GameRoom(game.id, game.classroom_id, game.professor_id, game.set_id, pool);
       rooms.set(game.id, room);
->>>>>>> main
     }
     return room;
   }
 
-<<<<<<< HEAD
-  function cleanupRoom(classroomId) {
-    let room = rooms.get(classroomId);
-    if (room && room.isEmpty()) {
-      clearTimeout(room.timer);
-      rooms.delete(classroomId);
-    }
-  }
-
-  function handleConnection(ws, req) {
-    let url = new URL(req.url, "http://localhost");
-    let classroomId = Number(url.searchParams.get("classroomId"));
-    let userId = req.session.userId;
-    let role = req.session.role;
-
-    if (!classroomId) {
-      ws.close(1008, "missing classroomId");
-      return;
-    }
-
-    if (role === "professor") {
-      pool.query(
-        "SELECT id FROM classrooms WHERE id = $1 AND professor_id = $2",
-        [classroomId, userId],
-        (err, result) => {
-          if (err || result.rows.length === 0) {
-            ws.close(1008, "not authorized for this classroom");
-            return;
-          }
-
-          let room = getRoom(classroomId, userId);
-          room.addHost(ws);
-
-          ws.on("message", (data) => onHostMessage(room, ws, data));
-          ws.on("close", () => {
-            room.removeClient(ws);
-            cleanupRoom(classroomId);
-          });
-        }
-      );
-    } else {
-      pool.query(
-        "SELECT u.id, u.username FROM classroom_students cs JOIN users u ON u.id = cs.student_id WHERE cs.classroom_id = $1 AND cs.student_id = $2",
-        [classroomId, userId],
-        (err, result) => {
-          if (err || result.rows.length === 0) {
-            ws.close(1008, "not enrolled in this classroom");
-            return;
-          }
-
-          let user = result.rows[0];
-          let room = getRoom(classroomId, null);
-          room.addPlayer(ws, user);
-
-          ws.on("message", (data) => onPlayerMessage(room, userId, data));
-          ws.on("close", () => {
-            room.removeClient(ws);
-            cleanupRoom(classroomId);
-          });
-        }
-      );
-    }
-  }
-
-  function onHostMessage(room, ws, data) {
-=======
   function cleanupRoom(gameId) {
     let room = rooms.get(gameId);
     if (room && room.isEmpty()) {
@@ -535,7 +375,6 @@ function createGameManager(pool) {
   }
 
   async function onHostMessage(room, ws, data) {
->>>>>>> main
     let message;
     try {
       message = JSON.parse(data);
@@ -544,19 +383,6 @@ function createGameManager(pool) {
     }
 
     if (message.type === "start_game") {
-<<<<<<< HEAD
-      pool.query(
-        "SELECT id, term, definition FROM terms WHERE set_id = $1 ORDER BY position ASC",
-        [message.setId],
-        (err, result) => {
-          if (err) {
-            ws.send(JSON.stringify({ type: "error", message: "could not load study set" }));
-            return;
-          }
-          room.startGame(result.rows);
-        }
-      );
-=======
       if (room.status !== "waiting") return;
 
       try {
@@ -569,7 +395,6 @@ function createGameManager(pool) {
         console.log(err);
         ws.send(JSON.stringify({ type: "error", message: "could not load study set" }));
       }
->>>>>>> main
     } else if (message.type === "end_game") {
       room.endGame();
     }
