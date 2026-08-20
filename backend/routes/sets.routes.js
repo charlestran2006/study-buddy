@@ -74,4 +74,37 @@ router.get("/sets", requireAuth, requireProfessor, (req, res) => {
   );
 });
 
+router.get("/sets/:id/games", requireAuth, requireProfessor, async (req, res) => {
+  let setId = req.params.id;
+
+  try {
+    let setResult = await pool.query(
+      "SELECT id FROM sets WHERE id = $1 AND user_id = $2",
+      [setId, req.session.userId]
+    );
+
+    if (setResult.rows.length === 0) {
+      res.status(404).json({ error: "study set not found" });
+      return;
+    }
+
+    let result = await pool.query(
+      `SELECT g.id, g.classroom_id, c.name AS classroom_name, g.created_at, g.status,
+              COUNT(gp.id)::int AS player_count
+       FROM games g
+       JOIN classrooms c ON c.id = g.classroom_id
+       LEFT JOIN game_players gp ON gp.game_id = g.id
+       WHERE g.set_id = $1
+       GROUP BY g.id, g.classroom_id, c.name, g.created_at, g.status
+       ORDER BY g.created_at DESC`,
+      [setId]
+    );
+
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "something went wrong" });
+  }
+});
+
 module.exports = router;
