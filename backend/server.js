@@ -20,20 +20,14 @@ httpServer.on("upgrade", (req, socket, head) => {
       return;
     }
 
-    pool.query(
-      "INSERT INTO users (username, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id, username, email, role",
-      [username, email, hash, role],
-      (err, result) => {
-        if (err) {
-          console.log(err);
-          res.status(400).json({ error: "could not create user" });
-          return;
-        }
-
-        res.status(200).json(result.rows[0]);
-      }
-    );
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      wss.emit("connection", ws, req);
+    });
   });
+});
+
+wss.on("connection", (ws, req) => {
+  gameManager.handleConnection(ws, req);
 });
 
 app.post("/login", (req, res) => {
@@ -452,6 +446,6 @@ app.post("/assignments", requireAuth, requireProfessor, (req, res) => {
   );
 });
 
-app.listen(port, hostname, () => {
+httpServer.listen(port, hostname, () => {
   console.log(`http://${hostname}:${port}`);
 });
