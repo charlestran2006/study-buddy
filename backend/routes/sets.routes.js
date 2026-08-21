@@ -107,4 +107,57 @@ router.get("/sets/:id/games", requireAuth, requireProfessor, async (req, res) =>
   }
 });
 
+router.get("/sets/:id/heatmap", requireAuth, requireProfessor, async (req, res) => {
+  let setId = req.params.id;
+
+  try {
+    let setResult = await pool.query(
+      "SELECT id FROM sets WHERE id = $1 AND user_id = $2",
+      [setId, req.session.userId]
+    );
+
+    if (setResult.rows.length === 0) {
+      res.status(404).json({ error: "study set not found" });
+      return;
+    }
+
+    let result = await pool.query(
+      `SELECT t.id AS term_id, t.term,
+              COUNT(ga.id)::int AS attempts,
+              COUNT(*) FILTER (WHERE ga.is_correct)::int AS correct
+       FROM terms t
+       LEFT JOIN game_answers ga ON ga.term_id = t.id AND ga.game_player_id IN (
+         SELECT gp.id
+         FROM game_players gp
+         JOIN games g ON g.id = gp.game_id
+         WHERE g.set_id = $1
+       )
+       WHERE t.set_id = $1
+       GROUP BY t.id, t.term
+       ORDER BY t.position ASC`,
+      [setId]
+    );
+
+    let heatmap = result.rows.map((row) => {
+      let attempts = row.attempts;
+      let correct = row.correct;
+      let accuracyPct = attempts > 0 ? Math.round((correct / attempts) * 1000) / 10 : null;
+
+      return { term: row.term, attempts, correct, accuracy_pct: accuracyPct };
+    });
+
+    heatmap.sort((a, b) => {
+      if (a.accuracy_pct === null && b.accuracy_pct === null) return 0;
+      if (a.accuracy_pct === null) return 1;
+      if (b.accuracy_pct === null) return -1;
+      return a.accuracy_pct - b.accuracy_pct;
+    });
+
+    res.status(200).json(heatmap);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "something went wrong" });
+  }
+});
+
 module.exports = router;
