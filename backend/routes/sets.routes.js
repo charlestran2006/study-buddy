@@ -109,6 +109,8 @@ router.get("/sets/:id/games", requireAuth, requireProfessor, async (req, res) =>
 
 router.get("/sets/:id/heatmap", requireAuth, requireProfessor, async (req, res) => {
   let setId = req.params.id;
+  let gameId = req.query.game_id;
+  let classroomId = req.query.classroom_id;
 
   try {
     let setResult = await pool.query(
@@ -121,6 +123,19 @@ router.get("/sets/:id/heatmap", requireAuth, requireProfessor, async (req, res) 
       return;
     }
 
+    let scopeConditions = ["g.set_id = $1"];
+    let scopeValues = [setId];
+
+    if (gameId) {
+      scopeValues.push(gameId);
+      scopeConditions.push(`g.id = $${scopeValues.length}`);
+    }
+
+    if (classroomId) {
+      scopeValues.push(classroomId);
+      scopeConditions.push(`g.classroom_id = $${scopeValues.length}`);
+    }
+
     let result = await pool.query(
       `SELECT t.id AS term_id, t.term,
               COUNT(ga.id)::int AS attempts,
@@ -130,12 +145,12 @@ router.get("/sets/:id/heatmap", requireAuth, requireProfessor, async (req, res) 
          SELECT gp.id
          FROM game_players gp
          JOIN games g ON g.id = gp.game_id
-         WHERE g.set_id = $1
+         WHERE ${scopeConditions.join(" AND ")}
        )
        WHERE t.set_id = $1
        GROUP BY t.id, t.term
        ORDER BY t.position ASC`,
-      [setId]
+      scopeValues
     );
 
     let heatmap = result.rows.map((row) => {
