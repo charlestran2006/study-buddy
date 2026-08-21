@@ -111,6 +111,7 @@ router.get("/sets/:id/heatmap", requireAuth, requireProfessor, async (req, res) 
   let setId = req.params.id;
   let gameId = req.query.game_id;
   let classroomId = req.query.classroom_id;
+  let studentId = req.query.student_id;
 
   try {
     let setResult = await pool.query(
@@ -134,6 +135,11 @@ router.get("/sets/:id/heatmap", requireAuth, requireProfessor, async (req, res) 
     if (classroomId) {
       scopeValues.push(classroomId);
       scopeConditions.push(`g.classroom_id = $${scopeValues.length}`);
+    }
+
+    if (studentId) {
+      scopeValues.push(studentId);
+      scopeConditions.push(`gp.student_id = $${scopeValues.length}`);
     }
 
     let result = await pool.query(
@@ -174,5 +180,4 @@ router.get("/sets/:id/heatmap", requireAuth, requireProfessor, async (req, res) 
     res.status(500).json({ error: "something went wrong" });
   }
 });
-
 module.exports = router;
