@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: study-buddy-backend
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: study-buddy-db
+          property: connectionString
+
+databases:
+  - name: study-buddy-db
+    plan: free
