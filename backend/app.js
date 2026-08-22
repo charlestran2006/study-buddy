@@ -11,6 +11,10 @@ let studyRoutes = require("./routes/study.routes");
 
 let app = express();
 
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
+
 let sessionMiddleware = session({
   secret: process.env.SESSION_SECRET,
   resave: false,
