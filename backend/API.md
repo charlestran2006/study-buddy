@@ -138,6 +138,28 @@ Returns the currently logged-in user based on the session cookie.
 
 ---
 
+## `DELETE /me`
+
+Deletes the currently logged-in user's own account and destroys the session. Requires the account to have no owned study sets or classrooms (delete those first) — this endpoint won't cascade-delete another user's data.
+
+**Success response**
+
+`200 OK`:
+
+```json
+{ "ok": true }
+```
+
+**Error responses**
+
+| Status | Condition | Body |
+|---|---|---|
+| 401 | No valid session | `{ "error": "not logged in" }` |
+| 409 | Account still owns study sets | `{ "error": "delete your study sets before deleting your account" }` |
+| 409 | Account still owns classrooms | `{ "error": "delete your classrooms before deleting your account" }` |
+
+---
+
 ## Games
 
 A game is a live, host-paced multiple-choice round — modeled on Kahoot. A professor starts one from a study set, students join with a code, and everyone answers the same question at once by picking one of up to 4 choices. `games.status` moves `waiting` → `active` → `finished`. `current_term_index` (and the current question/choices) are shared by the whole game, not per-player — but unlike a fully automatic quiz, **the professor manually advances to the next question** by calling `POST /games/:id/next`; the server never advances on its own. This means a student who never answers can't stall the game, and the professor decides how long to leave a question open.

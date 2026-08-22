@@ -5,7 +5,10 @@ project.
 
 ## Live deployment
 
-Backend: https://backend-polished-reed-1119.fly.dev
+Backend: https://study-buddy-backend-g74y.onrender.com
+
+(Free tier — spins down after inactivity, so the first request after a
+while can take ~30-60s to wake up.)
 
 ## What you need installed before starting
 
@@ -15,10 +18,9 @@ Backend: https://backend-polished-reed-1119.fly.dev
   (needed for local development; make sure `psql` works from your
   terminal after installing — on Windows this usually means adding
   `C:\Program Files\PostgreSQL\18\bin` to your PATH)
-- **flyctl** (only needed if you're doing deployment work) —
-  install with:
-  - Windows (PowerShell): `irm https://fly.io/install.ps1 | iex`
-  - Mac/Linux: `curl -L https://fly.io/install.sh | sh`
+- **Render account** (only needed if you're doing deployment work) —
+  the app deploys from `render.yaml` at the repo root; no CLI install
+  needed, deploys happen through the Render dashboard.
 
 ## Setup (do this after cloning)
 
@@ -74,30 +76,42 @@ curl -X POST -H "Content-Type: application/json" -d '{"username":"test","email":
 
 ```
 study-buddy/
+├── render.yaml            — Render deployment blueprint (web service + Postgres)
 └── backend/
-    ├── server.js       — main Express app
-    ├── schema.sql       — database table definitions
-    ├── Dockerfile        — used for fly.io deployment only
-    ├── fly.toml          — fly.io deployment config
-    ├── .env.example      — template for your local .env
+    ├── server.js          — HTTP server entry point, wires up WebSocket upgrade
+    ├── app.js             — Express app, session middleware, route mounting
+    ├── game.js            — live-game WebSocket logic
+    ├── db.js              — Postgres pool
+    ├── routes/            — REST route handlers (auth, sets, classrooms, games, assignments, study)
+    ├── middleware/         — auth middleware (requireAuth, requireProfessor, requireStudent)
+    ├── public/            — static frontend (HTML/CSS/JS)
+    ├── schema.sql         — database table definitions
+    ├── migrations/        — incremental schema changes (already folded into schema.sql)
+    ├── Dockerfile         — used for both Render and Fly deployment
+    ├── fly.toml           — Fly.io deployment config (legacy, not the current live deploy)
+    ├── .env.example       — template for your local .env
     └── package.json
 ```
 
 ## Deployment
 
-Deployment is handled through fly.io. If you need to redeploy:
-```
-flyctl deploy -a backend-polished-reed-1119
-```
-Only ask for deployment access if you're actually working on
-deployment — most day-to-day work just needs local setup above.
+Deployment is handled through Render, via the `render.yaml` blueprint
+at the repo root. Pushing to `main` on GitHub auto-redeploys the live
+service (`study-buddy-backend`) through Render's Blueprint sync — no
+manual deploy step needed in the common case. If auto-deploy doesn't
+pick up a push, trigger it manually from the service's page in the
+Render dashboard ("Manual Deploy" → "Deploy latest commit").
+
+A `fly.toml` still exists from an earlier deployment on Fly.io, but
+Render is the current live deployment.
 
 ## Database
 
-5 tables: `users`, `sets`, `terms`, `progress`, `favorites`. Full
-definitions in `schema.sql`.
+Tables: `users`, `sets`, `terms`, `progress`, `favorites`,
+`classrooms`, `classroom_students`, `assignments`, `games`,
+`game_players`, `game_answers`. Full definitions in `schema.sql`.
 
-## API endpoints (so far)
+## API endpoints
 
-- `POST /signup` — create an account
-- More endpoints will be added here as they're built.
+See `backend/API.md` for the full endpoint reference (auth, sets,
+classrooms, assignments, live games, study/heatmap).
