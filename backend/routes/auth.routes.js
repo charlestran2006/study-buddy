@@ -1,6 +1,7 @@
 let express = require("express");
 let bcrypt = require("bcrypt");
 let { pool } = require("../db");
+let { requireAuth } = require("../middleware/auth");
 
 let router = express.Router();
 
@@ -130,6 +131,55 @@ router.get("/me", (req, res) => {
       res.status(200).json(result.rows[0]);
     }
   );
+});
+
+router.delete("/me", requireAuth, async (req, res) => {
+  let userId = req.session.userId;
+
+  try {
+    let ownedSets = await pool.query("SELECT id FROM sets WHERE user_id = $1", [userId]);
+    if (ownedSets.rows.length > 0) {
+      res.status(409).json({ error: "delete your study sets before deleting your account" });
+      return;
+    }
+
+    let ownedClassrooms = await pool.query("SELECT id FROM classrooms WHERE professor_id = $1", [userId]);
+    if (ownedClassrooms.rows.length > 0) {
+      res.status(409).json({ error: "delete your classrooms before deleting your account" });
+      return;
+    }
+
+    let client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        "DELETE FROM game_answers WHERE game_player_id IN (SELECT id FROM game_players WHERE student_id = $1)",
+        [userId]
+      );
+      await client.query("DELETE FROM game_players WHERE student_id = $1", [userId]);
+      await client.query("DELETE FROM progress WHERE user_id = $1", [userId]);
+      await client.query("DELETE FROM favorites WHERE user_id = $1", [userId]);
+      await client.query("DELETE FROM classroom_students WHERE student_id = $1", [userId]);
+      await client.query("DELETE FROM users WHERE id = $1", [userId]);
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+
+    req.session.destroy((err) => {
+      if (err) {
+        console.log(err);
+      }
+      res.clearCookie("connect.sid");
+      res.status(200).json({ ok: true });
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "something went wrong" });
+  }
 });
 
 module.exports = router;
