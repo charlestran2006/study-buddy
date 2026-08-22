@@ -64,6 +64,12 @@ body {
   cursor: pointer;
   font-size: 0.95rem;
   color: #6b7280;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.tab:hover:not(.active) {
+  background: #f3f0fb;
+  color: var(--kahoot-purple);
 }
 
 .tab.active {
@@ -152,6 +158,11 @@ body {
 
 .auth-form button:hover {
   transform: translateY(-2px);
+}
+
+.auth-form button:active {
+  transform: translateY(1px);
+  border-bottom-width: 2px;
 }
 
 .auth-form button:disabled {
