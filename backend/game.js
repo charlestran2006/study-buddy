@@ -1,7 +1,6 @@
 let { URL } = require("url");
 
 const QUESTION_TIME_MS = 15000;
-const REVEAL_TIME_MS = 4000;
 
 function shuffle(arr) {
   let copy = arr.slice();
@@ -234,7 +233,24 @@ class GameRoom {
 
     if (isCorrect) player.score += pointsAwarded;
 
-    player.ws.send(JSON.stringify({ type: "answer_ack" }));
+    let reason;
+    if (!isCorrect) {
+      reason = "Incorrect";
+    } else if (remainingRatio >= 2 / 3) {
+      reason = "Speed Bonus!";
+    } else {
+      reason = "Correct!";
+    }
+
+    player.ws.send(
+      JSON.stringify({
+        type: "answer_ack",
+        correct: isCorrect,
+        points_awarded: pointsAwarded,
+        reason,
+        total_score: player.score,
+      })
+    );
 
     try {
       await this.pool.query(
@@ -266,8 +282,6 @@ class GameRoom {
       correctIndex: question.correctIndex,
       leaderboard: this.playerList().sort((a, b) => b.score - a.score),
     });
-
-    this.timer = setTimeout(() => this.nextQuestion(), REVEAL_TIME_MS);
   }
 
   async endGame() {
@@ -397,6 +411,8 @@ function createGameManager(pool) {
       }
     } else if (message.type === "end_game") {
       room.endGame();
+    } else if (message.type === "next_question") {
+      room.nextQuestion();
     }
   }
 
