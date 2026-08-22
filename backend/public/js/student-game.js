@@ -57,6 +57,10 @@ let gameStatus = document.getElementById("player-game-status");
 let gameQuestionView = document.getElementById("player-question-view");
 let gameTermEl = document.getElementById("player-question-term");
 let gameChoices = document.getElementById("player-choices");
+let gamePointsView = document.getElementById("player-points-view");
+let gamePointsValue = document.getElementById("player-points-value");
+let gamePointsReason = document.getElementById("player-points-reason");
+let gamePointsTotal = document.getElementById("player-points-total");
 let gameLeaderboardView = document.getElementById("player-leaderboard-view");
 let gameLeaderboardList = document.getElementById("player-leaderboard-list");
 
@@ -68,6 +72,7 @@ let answered = false;
 registerLogoutCleanup(() => {
   closeSocket();
   gamePlayPanel.classList.add("hidden");
+  gamePointsView.classList.add("hidden");
 });
 
 function closeSocket() {
@@ -125,6 +130,21 @@ function submitAnswer(choiceIndex, button) {
   socket.send(JSON.stringify({ type: "answer", choiceIndex }));
 }
 
+function renderPointsResult(message) {
+  gamePointsValue.classList.remove("correct", "incorrect");
+
+  if (message.correct) {
+    gamePointsValue.textContent = `+${message.points_awarded} pts`;
+    gamePointsValue.classList.add("correct");
+  } else {
+    gamePointsValue.textContent = "Incorrect";
+    gamePointsValue.classList.add("incorrect");
+  }
+
+  gamePointsReason.textContent = message.reason;
+  gamePointsTotal.textContent = `Total score: ${message.total_score}`;
+}
+
 function renderChoices(choices) {
   gameChoices.innerHTML = "";
   answered = false;
@@ -146,6 +166,7 @@ function handleMessage(event) {
     if (message.status === "waiting") {
       gameStatus.textContent = "Waiting for the professor to start...";
       gameQuestionView.classList.add("hidden");
+      gamePointsView.classList.add("hidden");
       gameLeaderboardView.classList.add("hidden");
     }
     return;
@@ -153,6 +174,7 @@ function handleMessage(event) {
 
   if (message.type === "question") {
     gameLeaderboardView.classList.add("hidden");
+    gamePointsView.classList.add("hidden");
     gameQuestionView.classList.remove("hidden");
     gameTermEl.textContent = message.term;
     renderChoices(message.choices);
@@ -165,7 +187,10 @@ function handleMessage(event) {
       clearInterval(countdownInterval);
       countdownInterval = null;
     }
-    gameStatus.textContent = "Answer locked in! Waiting for other players...";
+    gameStatus.textContent = "";
+    gameQuestionView.classList.add("hidden");
+    renderPointsResult(message);
+    gamePointsView.classList.remove("hidden");
     return;
   }
 
@@ -175,21 +200,17 @@ function handleMessage(event) {
       countdownInterval = null;
     }
     answered = true;
-    gameStatus.textContent = "Answer revealed! Next question coming up...";
-
-    Array.from(gameChoices.children).forEach((button, index) => {
-      button.disabled = true;
-      if (index === message.correctIndex) {
-        button.classList.add("correct");
-      } else if (button.classList.contains("selected")) {
-        button.classList.add("incorrect");
-      }
-    });
+    gameStatus.textContent = "Answer revealed! Waiting for the professor to continue...";
+    gameQuestionView.classList.add("hidden");
+    gamePointsView.classList.add("hidden");
+    renderWsLeaderboard(message.leaderboard);
+    gameLeaderboardView.classList.remove("hidden");
     return;
   }
 
   if (message.type === "game_over") {
     gameQuestionView.classList.add("hidden");
+    gamePointsView.classList.add("hidden");
     gameLeaderboardView.classList.remove("hidden");
     gameStatus.textContent = "Game over!";
     renderWsLeaderboard(message.leaderboard);
@@ -226,6 +247,7 @@ document.getElementById("join-game-form").addEventListener("submit", async (even
     form.reset();
     gamePlayPanel.classList.remove("hidden");
     gameQuestionView.classList.add("hidden");
+    gamePointsView.classList.add("hidden");
     gameLeaderboardView.classList.add("hidden");
     gameStatus.textContent = "Joined! Waiting for the professor to start.";
     connect(game.id);

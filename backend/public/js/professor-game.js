@@ -13,6 +13,7 @@ let hostQuestionTerm = document.getElementById("host-question-term");
 let hostQuestionMeta = document.getElementById("host-question-meta");
 let hostLeaderboardView = document.getElementById("host-leaderboard-view");
 let hostLeaderboardList = document.getElementById("host-leaderboard-list");
+let hostNextQuestionButton = document.getElementById("host-next-question-button");
 let hostEndGameButton = document.getElementById("host-end-game-button");
 let hostViewAnalyticsButton = document.getElementById("host-view-analytics-button");
 
@@ -26,6 +27,7 @@ registerLogoutCleanup(() => {
   closeSocket();
   hostGameLive.classList.add("hidden");
   hostViewAnalyticsButton.classList.add("hidden");
+  hostNextQuestionButton.classList.add("hidden");
   currentSetId = null;
   currentSetTitle = null;
 });
@@ -97,6 +99,7 @@ function handleMessage(event) {
     hostStartGameButton.classList.toggle("hidden", message.status !== "waiting");
     hostQuestionView.classList.toggle("hidden", message.status !== "in_progress");
     hostLeaderboardView.classList.toggle("hidden", message.status !== "finished");
+    hostNextQuestionButton.classList.add("hidden");
     return;
   }
 
@@ -108,6 +111,7 @@ function handleMessage(event) {
   if (message.type === "question") {
     hostStartGameButton.classList.add("hidden");
     hostLeaderboardView.classList.add("hidden");
+    hostNextQuestionButton.classList.add("hidden");
     hostQuestionView.classList.remove("hidden");
     hostQuestionTerm.textContent = message.term;
     startCountdown(Date.now() + message.timeLimit);
@@ -119,15 +123,17 @@ function handleMessage(event) {
       clearInterval(countdownInterval);
       countdownInterval = null;
     }
-    hostQuestionMeta.textContent = "Answer revealed — next question coming up...";
+    hostQuestionMeta.textContent = "Answer revealed — click Next Question to continue.";
     renderWsLeaderboard(message.leaderboard);
     hostLeaderboardView.classList.remove("hidden");
+    hostNextQuestionButton.classList.remove("hidden");
     return;
   }
 
   if (message.type === "game_over") {
     hostQuestionView.classList.add("hidden");
     hostStartGameButton.classList.add("hidden");
+    hostNextQuestionButton.classList.add("hidden");
     hostLeaderboardView.classList.remove("hidden");
     hostGameStatus.textContent = "Game over!";
     renderWsLeaderboard(message.leaderboard);
@@ -175,6 +181,7 @@ hostGameForm.addEventListener("submit", async (event) => {
     hostGameStatus.textContent = "Waiting for players to join...";
     hostQuestionView.classList.add("hidden");
     hostLeaderboardView.classList.add("hidden");
+    hostNextQuestionButton.classList.add("hidden");
     hostViewAnalyticsButton.classList.add("hidden");
     setDashboardMessage(`Game created. Join code: ${game.join_code}`, true);
     connect(game.id);
@@ -192,6 +199,12 @@ hostStartGameButton.addEventListener("click", () => {
   setTimeout(() => {
     hostStartGameButton.disabled = false;
   }, 1000);
+});
+
+hostNextQuestionButton.addEventListener("click", () => {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return;
+  hostNextQuestionButton.classList.add("hidden");
+  socket.send(JSON.stringify({ type: "next_question" }));
 });
 
 hostEndGameButton.addEventListener("click", () => {
