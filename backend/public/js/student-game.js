@@ -67,7 +67,10 @@ let gameLeaderboardList = document.getElementById("player-leaderboard-list");
 let socket = null;
 let currentGameId = null;
 let countdownInterval = null;
+let revealTimer = null;
 let answered = false;
+let lastQuestionChoices = [];
+let selectedChoiceIndex = null;
 
 registerLogoutCleanup(() => {
   closeSocket();
@@ -80,10 +83,18 @@ function closeSocket() {
     clearInterval(countdownInterval);
     countdownInterval = null;
   }
+  clearRevealTimer();
   if (socket) {
     socket.onclose = null;
     socket.close();
     socket = null;
+  }
+}
+
+function clearRevealTimer() {
+  if (revealTimer) {
+    clearTimeout(revealTimer);
+    revealTimer = null;
   }
 }
 
@@ -121,6 +132,7 @@ function startCountdown(deadline) {
 function submitAnswer(choiceIndex, button) {
   if (answered || !socket || socket.readyState !== WebSocket.OPEN) return;
   answered = true;
+  selectedChoiceIndex = choiceIndex;
 
   Array.from(gameChoices.children).forEach((btn) => {
     btn.disabled = true;
@@ -148,6 +160,7 @@ function renderPointsResult(message) {
 function renderChoices(choices) {
   gameChoices.innerHTML = "";
   answered = false;
+  selectedChoiceIndex = null;
 
   choices.forEach((definition, index) => {
     let button = document.createElement("button");
@@ -155,6 +168,26 @@ function renderChoices(choices) {
     button.className = "choice-button";
     button.textContent = definition;
     button.addEventListener("click", () => submitAnswer(index, button));
+    gameChoices.appendChild(button);
+  });
+}
+
+function renderRevealChoices(correctIndex) {
+  gameChoices.innerHTML = "";
+
+  lastQuestionChoices.forEach((definition, index) => {
+    let button = document.createElement("button");
+    button.type = "button";
+    button.className = "choice-button";
+    button.textContent = definition;
+    button.disabled = true;
+
+    if (index === correctIndex) {
+      button.classList.add("correct");
+    } else if (index === selectedChoiceIndex) {
+      button.classList.add("incorrect");
+    }
+
     gameChoices.appendChild(button);
   });
 }
@@ -173,10 +206,12 @@ function handleMessage(event) {
   }
 
   if (message.type === "question") {
+    clearRevealTimer();
     gameLeaderboardView.classList.add("hidden");
     gamePointsView.classList.add("hidden");
     gameQuestionView.classList.remove("hidden");
     gameTermEl.textContent = message.term;
+    lastQuestionChoices = message.choices;
     renderChoices(message.choices);
     startCountdown(Date.now() + message.timeLimit);
     return;
@@ -199,16 +234,26 @@ function handleMessage(event) {
       clearInterval(countdownInterval);
       countdownInterval = null;
     }
+    clearRevealTimer();
     answered = true;
     gameStatus.textContent = "Answer revealed! Waiting for the professor to continue...";
-    gameQuestionView.classList.add("hidden");
     gamePointsView.classList.add("hidden");
-    renderWsLeaderboard(message.leaderboard);
-    gameLeaderboardView.classList.remove("hidden");
+    gameLeaderboardView.classList.add("hidden");
+    renderRevealChoices(message.correctIndex);
+    gameQuestionView.classList.remove("hidden");
+
+    let leaderboard = message.leaderboard;
+    revealTimer = setTimeout(() => {
+      revealTimer = null;
+      gameQuestionView.classList.add("hidden");
+      renderWsLeaderboard(leaderboard);
+      gameLeaderboardView.classList.remove("hidden");
+    }, 2500);
     return;
   }
 
   if (message.type === "game_over") {
+    clearRevealTimer();
     gameQuestionView.classList.add("hidden");
     gamePointsView.classList.add("hidden");
     gameLeaderboardView.classList.remove("hidden");
