@@ -5,6 +5,7 @@ import {
   dashboardMessage,
   studentDashboardView,
   studentDashboardMessage,
+  analyticsView,
   message,
   setMessage,
 } from "./dom.js";
@@ -139,6 +140,7 @@ async function logout() {
   logoutCleanupFns.forEach((fn) => fn());
   dashboardView.classList.add("hidden");
   studentDashboardView.classList.add("hidden");
+  analyticsView.classList.add("hidden");
   authView.classList.remove("hidden");
   document.getElementById("login-form").reset();
 }

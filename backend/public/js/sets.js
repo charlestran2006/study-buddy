@@ -1,9 +1,11 @@
 import { apiRequest, submitForm } from "./api.js";
-import { setDashboardMessage } from "./dom.js";
+import { setDashboardMessage, escapeHtml } from "./dom.js";
+import { openAnalytics } from "./analytics.js";
 
 let termRows = document.getElementById("term-rows");
 let assignSetSelect = document.getElementById("assign-set-select");
 let hostSetSelect = document.getElementById("host-set-select");
+let setList = document.getElementById("set-list");
 
 export function addTermRow() {
   let row = document.createElement("div");
@@ -33,6 +35,11 @@ export async function loadSets() {
 function renderSets(sets) {
   assignSetSelect.innerHTML = "";
   hostSetSelect.innerHTML = "";
+  setList.innerHTML = "";
+
+  if (sets.length === 0) {
+    setList.innerHTML = '<li class="empty-state">No study sets yet.</li>';
+  }
 
   sets.forEach((set) => {
     let option = document.createElement("option");
@@ -44,6 +51,24 @@ function renderSets(sets) {
     hostOption.value = set.id;
     hostOption.textContent = set.title;
     hostSetSelect.appendChild(hostOption);
+
+    let item = document.createElement("li");
+    item.className = "classroom-item set-item";
+    item.innerHTML = `
+      <div>
+        <div class="set-name">${escapeHtml(set.title)}</div>
+        <div class="set-meta">${escapeHtml(set.description || "")}</div>
+      </div>
+    `;
+
+    let analyticsButton = document.createElement("button");
+    analyticsButton.type = "button";
+    analyticsButton.className = "analytics-link-button";
+    analyticsButton.textContent = "Struggle Analytics";
+    analyticsButton.addEventListener("click", () => openAnalytics(set.id, set.title));
+    item.appendChild(analyticsButton);
+
+    setList.appendChild(item);
   });
 }
 

@@ -1,6 +1,7 @@
 import { submitForm } from "./api.js";
 import { setDashboardMessage, escapeHtml, loadLeaderboard } from "./dom.js";
 import { registerLogoutCleanup } from "./auth.js";
+import { openAnalytics } from "./analytics.js";
 
 let hostGameForm = document.getElementById("host-game-form");
 let hostGameLive = document.getElementById("host-game-live");
@@ -13,14 +14,20 @@ let hostQuestionMeta = document.getElementById("host-question-meta");
 let hostLeaderboardView = document.getElementById("host-leaderboard-view");
 let hostLeaderboardList = document.getElementById("host-leaderboard-list");
 let hostEndGameButton = document.getElementById("host-end-game-button");
+let hostViewAnalyticsButton = document.getElementById("host-view-analytics-button");
 
 let socket = null;
 let currentGameId = null;
+let currentSetId = null;
+let currentSetTitle = null;
 let countdownInterval = null;
 
 registerLogoutCleanup(() => {
   closeSocket();
   hostGameLive.classList.add("hidden");
+  hostViewAnalyticsButton.classList.add("hidden");
+  currentSetId = null;
+  currentSetTitle = null;
 });
 
 function closeSocket() {
@@ -125,6 +132,7 @@ function handleMessage(event) {
     hostGameStatus.textContent = "Game over!";
     renderWsLeaderboard(message.leaderboard);
     if (currentGameId) loadLeaderboard(currentGameId, hostLeaderboardList);
+    hostViewAnalyticsButton.classList.remove("hidden");
     return;
   }
 
@@ -161,10 +169,13 @@ hostGameForm.addEventListener("submit", async (event) => {
       classroom_id: form.classroom_id.value,
       set_id: form.set_id.value,
     });
+    currentSetId = form.set_id.value;
+    currentSetTitle = form.set_id.selectedOptions[0].textContent;
     hostGameLive.classList.remove("hidden");
     hostGameStatus.textContent = "Waiting for players to join...";
     hostQuestionView.classList.add("hidden");
     hostLeaderboardView.classList.add("hidden");
+    hostViewAnalyticsButton.classList.add("hidden");
     setDashboardMessage(`Game created. Join code: ${game.join_code}`, true);
     connect(game.id);
   } catch (err) {
@@ -186,4 +197,9 @@ hostStartGameButton.addEventListener("click", () => {
 hostEndGameButton.addEventListener("click", () => {
   if (!socket || socket.readyState !== WebSocket.OPEN) return;
   socket.send(JSON.stringify({ type: "end_game" }));
+});
+
+hostViewAnalyticsButton.addEventListener("click", () => {
+  if (!currentSetId) return;
+  openAnalytics(currentSetId, currentSetTitle, { gameId: currentGameId });
 });
