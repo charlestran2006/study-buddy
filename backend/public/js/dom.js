@@ -7,6 +7,7 @@ export let dashboardView = document.getElementById("dashboard-view");
 export let dashboardMessage = document.getElementById("dashboard-message");
 export let studentDashboardView = document.getElementById("student-dashboard-view");
 export let studentDashboardMessage = document.getElementById("student-dashboard-message");
+export let analyticsView = document.getElementById("analytics-view");
 
 export function setMessage(text, isSuccess) {
   message.textContent = text;

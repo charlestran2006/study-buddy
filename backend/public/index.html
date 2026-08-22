@@ -91,6 +91,9 @@
       </section>
 
       <section class="panel hidden" id="panel-prof-sets">
+        <h2>Your Study Sets</h2>
+        <ul id="set-list" class="classroom-list"></ul>
+
         <h2>Create a Study Set</h2>
         <form id="create-set-form" class="panel-form">
           <label for="set-title">Title</label>
@@ -145,6 +148,7 @@
           <div id="host-leaderboard-view" class="leaderboard-view hidden">
             <h3>Leaderboard</h3>
             <ol id="host-leaderboard-list" class="leaderboard-list"></ol>
+            <button type="button" id="host-view-analytics-button" class="analytics-link-button hidden">View Struggle Analytics</button>
           </div>
 
           <button type="button" id="host-end-game-button">End Game</button>
@@ -207,6 +211,38 @@
             <ol id="player-leaderboard-list" class="leaderboard-list"></ol>
           </div>
         </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="analytics-view" class="hidden">
+    <header class="dashboard-header">
+      <h1 class="logo">Study Buddy</h1>
+      <div class="dashboard-header-right">
+        <button type="button" id="analytics-back-button">&larr; Back to Dashboard</button>
+      </div>
+    </header>
+
+    <main class="analytics-grid">
+      <section class="analytics-panel">
+        <h2 id="analytics-set-title">Struggle Analytics</h2>
+        <p class="message" id="analytics-message" role="alert"></p>
+
+        <div class="analytics-pickers">
+          <div class="analytics-picker">
+            <h3>Game</h3>
+            <ul id="analytics-game-list" class="classroom-list"></ul>
+          </div>
+
+          <div class="analytics-picker">
+            <h3>Student</h3>
+            <label for="analytics-student-select">Show</label>
+            <select id="analytics-student-select"></select>
+          </div>
+        </div>
+
+        <h3>Terms</h3>
+        <ul id="analytics-heatmap-list" class="classroom-list heatmap-list"></ul>
       </section>
     </main>
   </div>
