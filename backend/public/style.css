@@ -250,6 +250,12 @@ body {
   border: 1px solid #e2e4e9;
   border-radius: 8px;
   padding: 10px 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.classroom-item:hover {
+  border-color: var(--kahoot-purple);
+  box-shadow: 0 2px 8px rgba(70, 23, 143, 0.1);
 }
 
 .classroom-item .classroom-name {
@@ -330,6 +336,71 @@ body {
 
 .panel-form button[type="submit"]:hover {
   transform: translateY(-2px);
+}
+
+.flashcard-viewer {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.flashcard-set-title {
+  margin: 0;
+  font-weight: 800;
+  color: var(--kahoot-purple);
+}
+
+.flashcard {
+  width: 100%;
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(160deg, var(--kahoot-blue), #0d4b91);
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.flashcard:hover {
+  transform: translateY(-2px);
+}
+
+.flashcard.flashcard-flipped {
+  background: linear-gradient(160deg, var(--kahoot-green), #145c07);
+}
+
+.flashcard-counter {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.flashcard-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.flashcard-controls button {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.15s ease;
+}
+
+.flashcard-controls button:hover {
+  background: #f4f5f7;
 }
 
 #add-term-row {

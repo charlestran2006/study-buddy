@@ -172,6 +172,7 @@
     <nav class="tabs dashboard-tabs" id="student-tabs">
       <button type="button" class="tab active" data-target="panel-stu-classrooms">Classrooms</button>
       <button type="button" class="tab" data-target="panel-stu-join">Join Classroom</button>
+      <button type="button" class="tab" data-target="panel-stu-study">Study</button>
       <button type="button" class="tab" data-target="panel-stu-game">Live Game</button>
     </nav>
 
@@ -188,6 +189,27 @@
           <input id="join-code" name="code" type="text" required />
           <button type="submit">Join</button>
         </form>
+      </section>
+
+      <section class="panel hidden" id="panel-stu-study">
+        <h2>Study Flashcards</h2>
+        <form id="study-select-form" class="panel-form">
+          <label for="study-classroom-select">Classroom</label>
+          <select id="study-classroom-select" required></select>
+          <button type="submit">Load Flashcards</button>
+        </form>
+
+        <div id="flashcard-viewer" class="flashcard-viewer hidden">
+          <p id="flashcard-set-title" class="flashcard-set-title"></p>
+          <button type="button" id="flashcard" class="flashcard">
+            <span id="flashcard-content"></span>
+          </button>
+          <p id="flashcard-counter" class="flashcard-counter"></p>
+          <div class="flashcard-controls">
+            <button type="button" id="flashcard-prev">Previous</button>
+            <button type="button" id="flashcard-next">Next</button>
+          </div>
+        </div>
       </section>
 
       <section class="panel hidden" id="panel-stu-game">
