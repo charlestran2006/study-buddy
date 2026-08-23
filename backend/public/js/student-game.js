@@ -71,6 +71,12 @@ let revealTimer = null;
 let answered = false;
 let lastQuestionChoices = [];
 let selectedChoiceIndex = null;
+let manualClose = false;
+let reconnectAttempts = 0;
+let reconnectTimer = null;
+
+const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_DELAY_MS = 1500;
 
 registerLogoutCleanup(() => {
   closeSocket();
@@ -79,6 +85,11 @@ registerLogoutCleanup(() => {
 });
 
 function closeSocket() {
+  manualClose = true;
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
   if (countdownInterval) {
     clearInterval(countdownInterval);
     countdownInterval = null;
@@ -89,6 +100,30 @@ function closeSocket() {
     socket.close();
     socket = null;
   }
+}
+
+function scheduleReconnect() {
+  // The old connection's countdown/reveal timers are tied to a socket that no
+  // longer exists and would otherwise keep ticking and overwrite the status
+  // message below with stale text.
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+  clearRevealTimer();
+
+  if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+    gameStatus.textContent = "Connection lost. Please refresh the page to reconnect.";
+    return;
+  }
+
+  reconnectAttempts += 1;
+  gameStatus.textContent = `Disconnected. Reconnecting (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`;
+
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    connect(currentGameId);
+  }, RECONNECT_DELAY_MS);
 }
 
 function clearRevealTimer() {
@@ -270,14 +305,19 @@ function handleMessage(event) {
 
 function connect(gameId) {
   closeSocket();
+  manualClose = false;
   currentGameId = gameId;
 
   let protocol = location.protocol === "https:" ? "wss:" : "ws:";
   socket = new WebSocket(`${protocol}//${location.host}/?gameId=${gameId}`);
 
+  socket.addEventListener("open", () => {
+    reconnectAttempts = 0;
+  });
   socket.addEventListener("message", handleMessage);
   socket.addEventListener("close", () => {
     socket = null;
+    if (!manualClose) scheduleReconnect();
   });
 }
 

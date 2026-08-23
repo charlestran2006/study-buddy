@@ -22,6 +22,12 @@ let currentGameId = null;
 let currentSetId = null;
 let currentSetTitle = null;
 let countdownInterval = null;
+let manualClose = false;
+let reconnectAttempts = 0;
+let reconnectTimer = null;
+
+const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_DELAY_MS = 1500;
 
 registerLogoutCleanup(() => {
   closeSocket();
@@ -33,6 +39,11 @@ registerLogoutCleanup(() => {
 });
 
 function closeSocket() {
+  manualClose = true;
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
   if (countdownInterval) {
     clearInterval(countdownInterval);
     countdownInterval = null;
@@ -42,6 +53,29 @@ function closeSocket() {
     socket.close();
     socket = null;
   }
+}
+
+function scheduleReconnect() {
+  // The old connection's countdown timer is tied to a socket that no longer
+  // exists and would otherwise keep ticking and overwrite the status message
+  // below with a stale "Xs left" every 250ms.
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+
+  if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+    hostGameStatus.textContent = "Connection lost. Please refresh the page to reconnect.";
+    return;
+  }
+
+  reconnectAttempts += 1;
+  hostGameStatus.textContent = `Disconnected. Reconnecting (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`;
+
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    connect(currentGameId);
+  }, RECONNECT_DELAY_MS);
 }
 
 function renderPlayerList(players) {
@@ -149,6 +183,7 @@ function handleMessage(event) {
 
 function connect(gameId) {
   closeSocket();
+  manualClose = false;
   currentGameId = gameId;
 
   let protocol = location.protocol === "https:" ? "wss:" : "ws:";
@@ -157,10 +192,12 @@ function connect(gameId) {
   hostStartGameButton.disabled = true;
   socket.addEventListener("open", () => {
     hostStartGameButton.disabled = false;
+    reconnectAttempts = 0;
   });
   socket.addEventListener("message", handleMessage);
   socket.addEventListener("close", () => {
     socket = null;
+    if (!manualClose) scheduleReconnect();
   });
 }
 
