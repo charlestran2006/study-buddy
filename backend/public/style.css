@@ -773,3 +773,9 @@ body {
 #host-next-question-button:hover {
   background: #15803d;
 }
+
+.heatmap-chart-container {
+  position: relative;
+  width: 100%;
+  margin-bottom: 20px;
+}

@@ -6,10 +6,26 @@ let analyticsMessage = document.getElementById("analytics-message");
 let analyticsGameList = document.getElementById("analytics-game-list");
 let analyticsStudentSelect = document.getElementById("analytics-student-select");
 let analyticsHeatmapList = document.getElementById("analytics-heatmap-list");
+let analyticsHeatmapChartCanvas = document.getElementById("analytics-heatmap-chart");
 let analyticsBackButton = document.getElementById("analytics-back-button");
 
 let currentSetId = null;
 let currentGameId = null;
+let heatmapChart = null;
+
+const ACCURACY_COLORS = {
+  notAsked: "#6b7280",
+  low: "#e21b3c",
+  mid: "#d89e00",
+  high: "#26890c",
+};
+
+function barColorForAccuracy(accuracyPct) {
+  if (accuracyPct === null) return ACCURACY_COLORS.notAsked;
+  if (accuracyPct < 50) return ACCURACY_COLORS.low;
+  if (accuracyPct <= 75) return ACCURACY_COLORS.mid;
+  return ACCURACY_COLORS.high;
+}
 
 function setAnalyticsMessage(text, isSuccess) {
   analyticsMessage.textContent = text;
@@ -105,7 +121,58 @@ function renderStudentSelect(students) {
   });
 }
 
+function renderHeatmapChart(rows) {
+  if (heatmapChart) {
+    heatmapChart.destroy();
+    heatmapChart = null;
+  }
+
+  if (rows.length === 0) return;
+
+  analyticsHeatmapChartCanvas.parentElement.style.height = `${Math.max(120, rows.length * 44)}px`;
+
+  heatmapChart = new Chart(analyticsHeatmapChartCanvas, {
+    type: "bar",
+    data: {
+      labels: rows.map((row) => `${row.term} (n=${row.attempts})`),
+      datasets: [
+        {
+          data: rows.map((row) => (row.accuracy_pct === null ? 0 : Math.max(row.accuracy_pct, 3))),
+          backgroundColor: rows.map((row) => barColorForAccuracy(row.accuracy_pct)),
+          borderRadius: 4,
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          min: 0,
+          max: 100,
+          ticks: { callback: (value) => `${value}%` },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              let row = rows[context.dataIndex];
+              return row.accuracy_pct === null
+                ? "Not asked yet"
+                : `${row.correct}/${row.attempts} correct (${row.accuracy_pct}%)`;
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
 function renderHeatmap(rows) {
+  renderHeatmapChart(rows);
   analyticsHeatmapList.innerHTML = "";
 
   if (rows.length === 0) {
