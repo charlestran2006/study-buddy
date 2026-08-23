@@ -1,4 +1,5 @@
 import "./dom.js";
+import "./sound.js";
 import "./tabs.js";
 import "./auth.js";
 import "./classrooms.js";

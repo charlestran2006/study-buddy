@@ -38,6 +38,25 @@ export function escapeHtml(str) {
   return div.innerHTML;
 }
 
+export function animateNumber(el, from, to, duration = 500) {
+  if (from === to) {
+    el.textContent = to;
+    return;
+  }
+
+  let start = performance.now();
+
+  function step(now) {
+    let progress = Math.min(1, (now - start) / duration);
+    let eased = 1 - Math.pow(1 - progress, 2);
+    let value = Math.round(from + (to - from) * eased);
+    el.textContent = value;
+    if (progress < 1) requestAnimationFrame(step);
+  }
+
+  requestAnimationFrame(step);
+}
+
 export async function loadLeaderboard(gameId, listEl) {
   try {
     let data = await apiRequest(`/games/${gameId}/leaderboard`);

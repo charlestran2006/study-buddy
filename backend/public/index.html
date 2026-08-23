@@ -8,6 +8,15 @@
   <link rel="icon" type="image/png" href="/icon.png">
 </head>
 <body>
+  <button
+    type="button"
+    id="mute-toggle-button"
+    class="mute-toggle"
+    aria-pressed="false"
+    aria-label="Mute sound"
+    title="Mute sound"
+  >🔊</button>
+
   <div id="auth-view">
     <main class="auth-card">
       <h1 class="logo">Study Buddy</h1>
@@ -149,6 +158,34 @@
             <h3>Leaderboard</h3>
             <ol id="host-leaderboard-list" class="leaderboard-list"></ol>
             <button type="button" id="host-next-question-button" class="hidden">Next Question</button>
+          </div>
+
+          <div id="host-podium-view" class="podium-view hidden">
+            <h3>🏆 Final Results</h3>
+            <div class="podium">
+              <div class="podium-slot podium-second">
+                <div class="podium-card">
+                  <p class="podium-medal">🥈</p>
+                  <p class="podium-name" id="host-podium-2-name"></p>
+                  <p class="podium-score" id="host-podium-2-score"></p>
+                </div>
+              </div>
+              <div class="podium-slot podium-first">
+                <div class="podium-card">
+                  <p class="podium-medal">🥇</p>
+                  <p class="podium-name" id="host-podium-1-name"></p>
+                  <p class="podium-score" id="host-podium-1-score"></p>
+                </div>
+              </div>
+              <div class="podium-slot podium-third">
+                <div class="podium-card">
+                  <p class="podium-medal">🥉</p>
+                  <p class="podium-name" id="host-podium-3-name"></p>
+                  <p class="podium-score" id="host-podium-3-score"></p>
+                </div>
+              </div>
+            </div>
+            <ol id="host-podium-rest-list" class="leaderboard-list"></ol>
             <button type="button" id="host-view-analytics-button" class="analytics-link-button hidden">View Struggle Analytics</button>
           </div>
 
@@ -232,12 +269,40 @@
           <div id="player-points-view" class="points-view hidden">
             <p class="points-value" id="player-points-value"></p>
             <p class="points-reason" id="player-points-reason"></p>
-            <p class="points-total" id="player-points-total"></p>
+            <p class="points-total">Total score: <span id="player-points-total-value">0</span></p>
           </div>
 
           <div id="player-leaderboard-view" class="leaderboard-view hidden">
             <h3>Leaderboard</h3>
             <ol id="player-leaderboard-list" class="leaderboard-list"></ol>
+          </div>
+
+          <div id="player-podium-view" class="podium-view hidden">
+            <h3>🏆 Final Results</h3>
+            <div class="podium">
+              <div class="podium-slot podium-second">
+                <div class="podium-card">
+                  <p class="podium-medal">🥈</p>
+                  <p class="podium-name" id="player-podium-2-name"></p>
+                  <p class="podium-score" id="player-podium-2-score"></p>
+                </div>
+              </div>
+              <div class="podium-slot podium-first">
+                <div class="podium-card">
+                  <p class="podium-medal">🥇</p>
+                  <p class="podium-name" id="player-podium-1-name"></p>
+                  <p class="podium-score" id="player-podium-1-score"></p>
+                </div>
+              </div>
+              <div class="podium-slot podium-third">
+                <div class="podium-card">
+                  <p class="podium-medal">🥉</p>
+                  <p class="podium-name" id="player-podium-3-name"></p>
+                  <p class="podium-score" id="player-podium-3-score"></p>
+                </div>
+              </div>
+            </div>
+            <ol id="player-podium-rest-list" class="leaderboard-list"></ol>
           </div>
         </div>
       </section>
@@ -281,6 +346,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

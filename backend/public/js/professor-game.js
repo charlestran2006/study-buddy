@@ -1,7 +1,8 @@
 import { submitForm } from "./api.js";
-import { setDashboardMessage, escapeHtml, loadLeaderboard } from "./dom.js";
+import { setDashboardMessage, escapeHtml, animateNumber } from "./dom.js";
 import { registerLogoutCleanup } from "./auth.js";
 import { openAnalytics } from "./analytics.js";
+import { playSound } from "./sound.js";
 
 let hostGameForm = document.getElementById("host-game-form");
 let hostGameLive = document.getElementById("host-game-live");
@@ -16,6 +17,8 @@ let hostLeaderboardList = document.getElementById("host-leaderboard-list");
 let hostNextQuestionButton = document.getElementById("host-next-question-button");
 let hostEndGameButton = document.getElementById("host-end-game-button");
 let hostViewAnalyticsButton = document.getElementById("host-view-analytics-button");
+let hostPodiumView = document.getElementById("host-podium-view");
+let hostPodiumRestList = document.getElementById("host-podium-rest-list");
 
 let socket = null;
 let currentGameId = null;
@@ -25,17 +28,25 @@ let countdownInterval = null;
 let manualClose = false;
 let reconnectAttempts = 0;
 let reconnectTimer = null;
+let lastScores = new Map();
+let lastTickSecond = null;
+let confettiFired = false;
 
 const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_DELAY_MS = 1500;
+const URGENT_SECONDS = 5;
+const TICK_SECONDS = 3;
 
 registerLogoutCleanup(() => {
   closeSocket();
   hostGameLive.classList.add("hidden");
   hostViewAnalyticsButton.classList.add("hidden");
   hostNextQuestionButton.classList.add("hidden");
+  hostPodiumView.classList.add("hidden");
   currentSetId = null;
   currentSetTitle = null;
+  lastScores.clear();
+  confettiFired = false;
 });
 
 function closeSocket() {
@@ -95,30 +106,82 @@ function renderPlayerList(players) {
   hostGameStatus.textContent = `${players.length} player${players.length === 1 ? "" : "s"} currently viewing`;
 }
 
-function renderWsLeaderboard(players) {
-  hostLeaderboardList.innerHTML = "";
+function renderWsLeaderboard(players, listEl, skipTopN) {
+  listEl = listEl || hostLeaderboardList;
+  let skip = skipTopN || 0;
+  let visible = players.slice(skip);
+  listEl.innerHTML = "";
 
-  if (players.length === 0) {
-    hostLeaderboardList.innerHTML = '<li class="empty-state">No players yet.</li>';
+  if (visible.length === 0) {
+    if (skip === 0) listEl.innerHTML = '<li class="empty-state">No players yet.</li>';
     return;
   }
 
-  players.forEach((player, index) => {
+  visible.forEach((player, i) => {
     let item = document.createElement("li");
-    item.innerHTML = `
-      <span><span class="rank">#${index + 1}</span>${escapeHtml(player.username)}</span>
-      <span>${player.score} pts</span>
-    `;
-    hostLeaderboardList.appendChild(item);
+    let scoreSpan = document.createElement("span");
+    scoreSpan.className = "player-score-value";
+    let previous = lastScores.has(player.id) ? lastScores.get(player.id) : 0;
+    scoreSpan.textContent = previous;
+
+    item.innerHTML = `<span><span class="rank">#${i + 1 + skip}</span>${escapeHtml(player.username)}</span> `;
+    let scoreWrap = document.createElement("span");
+    scoreWrap.appendChild(scoreSpan);
+    scoreWrap.append(" pts");
+    item.appendChild(scoreWrap);
+
+    listEl.appendChild(item);
+    animateNumber(scoreSpan, previous, player.score);
+    lastScores.set(player.id, player.score);
   });
+}
+
+function renderPodium(players) {
+  let top3 = players.slice(0, 3);
+  let slots = [
+    { name: document.getElementById("host-podium-1-name"), score: document.getElementById("host-podium-1-score") },
+    { name: document.getElementById("host-podium-2-name"), score: document.getElementById("host-podium-2-score") },
+    { name: document.getElementById("host-podium-3-name"), score: document.getElementById("host-podium-3-score") },
+  ];
+
+  slots.forEach((slot, i) => {
+    let player = top3[i];
+    if (!player) {
+      slot.name.textContent = "";
+      slot.score.textContent = "";
+      return;
+    }
+    slot.name.textContent = player.username;
+    let previous = lastScores.has(player.id) ? lastScores.get(player.id) : 0;
+    slot.score.innerHTML = `<span class="podium-score-value"></span> pts`;
+    animateNumber(slot.score.querySelector(".podium-score-value"), previous, player.score);
+    lastScores.set(player.id, player.score);
+  });
+
+  renderWsLeaderboard(players, hostPodiumRestList, Math.min(3, players.length));
+
+  hostPodiumView.classList.remove("hidden");
+  if (!confettiFired) {
+    confettiFired = true;
+    if (typeof confetti === "function") {
+      confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 } });
+    }
+  }
 }
 
 function startCountdown(deadline) {
   if (countdownInterval) clearInterval(countdownInterval);
+  lastTickSecond = null;
 
   let tick = () => {
     let secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
     hostQuestionMeta.textContent = `${secondsLeft}s left`;
+    hostQuestionMeta.classList.toggle("timer-urgent", secondsLeft > 0 && secondsLeft <= URGENT_SECONDS);
+
+    if (secondsLeft <= TICK_SECONDS && secondsLeft > 0 && secondsLeft !== lastTickSecond) {
+      lastTickSecond = secondsLeft;
+      playSound("tick");
+    }
   };
 
   tick();
@@ -134,6 +197,7 @@ function handleMessage(event) {
     hostQuestionView.classList.toggle("hidden", message.status !== "in_progress");
     hostLeaderboardView.classList.toggle("hidden", message.status !== "finished");
     hostNextQuestionButton.classList.add("hidden");
+    hostPodiumView.classList.add("hidden");
     return;
   }
 
@@ -145,6 +209,7 @@ function handleMessage(event) {
   if (message.type === "question") {
     hostStartGameButton.classList.add("hidden");
     hostLeaderboardView.classList.add("hidden");
+    hostPodiumView.classList.add("hidden");
     hostNextQuestionButton.classList.add("hidden");
     hostQuestionView.classList.remove("hidden");
     hostQuestionTerm.textContent = message.term;
@@ -157,8 +222,10 @@ function handleMessage(event) {
       clearInterval(countdownInterval);
       countdownInterval = null;
     }
+    hostQuestionMeta.classList.remove("timer-urgent");
     hostQuestionMeta.textContent = "Answer revealed — click Next Question to continue.";
-    renderWsLeaderboard(message.leaderboard);
+    hostPodiumView.classList.add("hidden");
+    renderWsLeaderboard(message.leaderboard, hostLeaderboardList);
     hostLeaderboardView.classList.remove("hidden");
     hostNextQuestionButton.classList.remove("hidden");
     return;
@@ -168,10 +235,9 @@ function handleMessage(event) {
     hostQuestionView.classList.add("hidden");
     hostStartGameButton.classList.add("hidden");
     hostNextQuestionButton.classList.add("hidden");
-    hostLeaderboardView.classList.remove("hidden");
+    hostLeaderboardView.classList.add("hidden");
     hostGameStatus.textContent = "Game over!";
-    renderWsLeaderboard(message.leaderboard);
-    if (currentGameId) loadLeaderboard(currentGameId, hostLeaderboardList);
+    renderPodium(message.leaderboard);
     hostViewAnalyticsButton.classList.remove("hidden");
     return;
   }
@@ -203,6 +269,7 @@ function connect(gameId) {
 
 hostGameForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  playSound("click");
   let form = event.target;
   let button = form.querySelector("button");
   button.disabled = true;
@@ -218,8 +285,11 @@ hostGameForm.addEventListener("submit", async (event) => {
     hostGameStatus.textContent = "Waiting for players to join...";
     hostQuestionView.classList.add("hidden");
     hostLeaderboardView.classList.add("hidden");
+    hostPodiumView.classList.add("hidden");
     hostNextQuestionButton.classList.add("hidden");
     hostViewAnalyticsButton.classList.add("hidden");
+    lastScores.clear();
+    confettiFired = false;
     setDashboardMessage(`Game created. Join code: ${game.join_code}`, true);
     connect(game.id);
   } catch (err) {
@@ -231,6 +301,8 @@ hostGameForm.addEventListener("submit", async (event) => {
 
 hostStartGameButton.addEventListener("click", () => {
   if (!socket || socket.readyState !== WebSocket.OPEN) return;
+  playSound("click");
+  playSound("ready");
   hostStartGameButton.disabled = true;
   socket.send(JSON.stringify({ type: "start_game" }));
   setTimeout(() => {
@@ -240,12 +312,14 @@ hostStartGameButton.addEventListener("click", () => {
 
 hostNextQuestionButton.addEventListener("click", () => {
   if (!socket || socket.readyState !== WebSocket.OPEN) return;
+  playSound("click");
   hostNextQuestionButton.classList.add("hidden");
   socket.send(JSON.stringify({ type: "next_question" }));
 });
 
 hostEndGameButton.addEventListener("click", () => {
   if (!socket || socket.readyState !== WebSocket.OPEN) return;
+  playSound("click");
   socket.send(JSON.stringify({ type: "end_game" }));
 });
 

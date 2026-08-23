@@ -1,6 +1,7 @@
 import { apiRequest, submitForm } from "./api.js";
-import { setStudentDashboardMessage, escapeHtml, loadLeaderboard } from "./dom.js";
+import { setStudentDashboardMessage, escapeHtml, animateNumber } from "./dom.js";
 import { registerLogoutCleanup, registerStudentDashboardLoader } from "./auth.js";
+import { playSound } from "./sound.js";
 
 let myClassroomList = document.getElementById("my-classroom-list");
 
@@ -60,9 +61,11 @@ let gameChoices = document.getElementById("player-choices");
 let gamePointsView = document.getElementById("player-points-view");
 let gamePointsValue = document.getElementById("player-points-value");
 let gamePointsReason = document.getElementById("player-points-reason");
-let gamePointsTotal = document.getElementById("player-points-total");
+let gamePointsTotalValue = document.getElementById("player-points-total-value");
 let gameLeaderboardView = document.getElementById("player-leaderboard-view");
 let gameLeaderboardList = document.getElementById("player-leaderboard-list");
+let gamePodiumView = document.getElementById("player-podium-view");
+let gamePodiumRestList = document.getElementById("player-podium-rest-list");
 
 let socket = null;
 let currentGameId = null;
@@ -74,14 +77,24 @@ let selectedChoiceIndex = null;
 let manualClose = false;
 let reconnectAttempts = 0;
 let reconnectTimer = null;
+let myLastScore = 0;
+let lastScores = new Map();
+let lastTickSecond = null;
+let confettiFired = false;
 
 const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_DELAY_MS = 1500;
+const URGENT_SECONDS = 5;
+const TICK_SECONDS = 3;
 
 registerLogoutCleanup(() => {
   closeSocket();
   gamePlayPanel.classList.add("hidden");
   gamePointsView.classList.add("hidden");
+  gamePodiumView.classList.add("hidden");
+  myLastScore = 0;
+  lastScores.clear();
+  confettiFired = false;
 });
 
 function closeSocket() {
@@ -133,31 +146,83 @@ function clearRevealTimer() {
   }
 }
 
-function renderWsLeaderboard(players) {
-  gameLeaderboardList.innerHTML = "";
+function renderWsLeaderboard(players, listEl, skipTopN) {
+  listEl = listEl || gameLeaderboardList;
+  let skip = skipTopN || 0;
+  let visible = players.slice(skip);
+  listEl.innerHTML = "";
 
-  if (players.length === 0) {
-    gameLeaderboardList.innerHTML = '<li class="empty-state">No players yet.</li>';
+  if (visible.length === 0) {
+    if (skip === 0) listEl.innerHTML = '<li class="empty-state">No players yet.</li>';
     return;
   }
 
-  players.forEach((player, index) => {
+  visible.forEach((player, i) => {
     let item = document.createElement("li");
-    item.innerHTML = `
-      <span><span class="rank">#${index + 1}</span>${escapeHtml(player.username)}</span>
-      <span>${player.score} pts</span>
-    `;
-    gameLeaderboardList.appendChild(item);
+    let scoreSpan = document.createElement("span");
+    scoreSpan.className = "player-score-value";
+    let previous = lastScores.has(player.id) ? lastScores.get(player.id) : 0;
+    scoreSpan.textContent = previous;
+
+    item.innerHTML = `<span><span class="rank">#${i + 1 + skip}</span>${escapeHtml(player.username)}</span> `;
+    let scoreWrap = document.createElement("span");
+    scoreWrap.appendChild(scoreSpan);
+    scoreWrap.append(" pts");
+    item.appendChild(scoreWrap);
+
+    listEl.appendChild(item);
+    animateNumber(scoreSpan, previous, player.score);
+    lastScores.set(player.id, player.score);
   });
+}
+
+function renderPodium(players) {
+  let top3 = players.slice(0, 3);
+  let slots = [
+    { name: document.getElementById("player-podium-1-name"), score: document.getElementById("player-podium-1-score") },
+    { name: document.getElementById("player-podium-2-name"), score: document.getElementById("player-podium-2-score") },
+    { name: document.getElementById("player-podium-3-name"), score: document.getElementById("player-podium-3-score") },
+  ];
+
+  slots.forEach((slot, i) => {
+    let player = top3[i];
+    if (!player) {
+      slot.name.textContent = "";
+      slot.score.textContent = "";
+      return;
+    }
+    slot.name.textContent = player.username;
+    let previous = lastScores.has(player.id) ? lastScores.get(player.id) : 0;
+    slot.score.innerHTML = `<span class="podium-score-value"></span> pts`;
+    animateNumber(slot.score.querySelector(".podium-score-value"), previous, player.score);
+    lastScores.set(player.id, player.score);
+  });
+
+  renderWsLeaderboard(players, gamePodiumRestList, Math.min(3, players.length));
+
+  gamePodiumView.classList.remove("hidden");
+  if (!confettiFired) {
+    confettiFired = true;
+    if (typeof confetti === "function") {
+      confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 } });
+    }
+  }
 }
 
 function startCountdown(deadline) {
   if (countdownInterval) clearInterval(countdownInterval);
+  lastTickSecond = null;
 
   let tick = () => {
     if (answered) return;
     let secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
     gameStatus.textContent = `${secondsLeft}s left`;
+    gameStatus.classList.toggle("timer-urgent", secondsLeft > 0 && secondsLeft <= URGENT_SECONDS);
+
+    if (secondsLeft <= TICK_SECONDS && secondsLeft > 0 && secondsLeft !== lastTickSecond) {
+      lastTickSecond = secondsLeft;
+      playSound("tick");
+    }
   };
 
   tick();
@@ -166,6 +231,7 @@ function startCountdown(deadline) {
 
 function submitAnswer(choiceIndex, button) {
   if (answered || !socket || socket.readyState !== WebSocket.OPEN) return;
+  playSound("click");
   answered = true;
   selectedChoiceIndex = choiceIndex;
 
@@ -183,13 +249,16 @@ function renderPointsResult(message) {
   if (message.correct) {
     gamePointsValue.textContent = `+${message.points_awarded} pts`;
     gamePointsValue.classList.add("correct");
+    playSound("correct");
   } else {
     gamePointsValue.textContent = "Incorrect";
     gamePointsValue.classList.add("incorrect");
+    playSound("incorrect");
   }
 
   gamePointsReason.textContent = message.reason;
-  gamePointsTotal.textContent = `Total score: ${message.total_score}`;
+  animateNumber(gamePointsTotalValue, myLastScore, message.total_score);
+  myLastScore = message.total_score;
 }
 
 function renderChoices(choices) {
@@ -236,6 +305,7 @@ function handleMessage(event) {
       gameQuestionView.classList.add("hidden");
       gamePointsView.classList.add("hidden");
       gameLeaderboardView.classList.add("hidden");
+      gamePodiumView.classList.add("hidden");
     }
     return;
   }
@@ -244,6 +314,7 @@ function handleMessage(event) {
     clearRevealTimer();
     gameLeaderboardView.classList.add("hidden");
     gamePointsView.classList.add("hidden");
+    gamePodiumView.classList.add("hidden");
     gameQuestionView.classList.remove("hidden");
     gameTermEl.textContent = message.term;
     lastQuestionChoices = message.choices;
@@ -271,9 +342,11 @@ function handleMessage(event) {
     }
     clearRevealTimer();
     answered = true;
+    gameStatus.classList.remove("timer-urgent");
     gameStatus.textContent = "Answer revealed! Waiting for the professor to continue...";
     gamePointsView.classList.add("hidden");
     gameLeaderboardView.classList.add("hidden");
+    gamePodiumView.classList.add("hidden");
     renderRevealChoices(message.correctIndex);
     gameQuestionView.classList.remove("hidden");
 
@@ -281,7 +354,7 @@ function handleMessage(event) {
     revealTimer = setTimeout(() => {
       revealTimer = null;
       gameQuestionView.classList.add("hidden");
-      renderWsLeaderboard(leaderboard);
+      renderWsLeaderboard(leaderboard, gameLeaderboardList);
       gameLeaderboardView.classList.remove("hidden");
     }, 2500);
     return;
@@ -291,10 +364,9 @@ function handleMessage(event) {
     clearRevealTimer();
     gameQuestionView.classList.add("hidden");
     gamePointsView.classList.add("hidden");
-    gameLeaderboardView.classList.remove("hidden");
+    gameLeaderboardView.classList.add("hidden");
     gameStatus.textContent = "Game over!";
-    renderWsLeaderboard(message.leaderboard);
-    if (currentGameId) loadLeaderboard(currentGameId, gameLeaderboardList);
+    renderPodium(message.leaderboard);
     return;
   }
 
@@ -323,6 +395,7 @@ function connect(gameId) {
 
 document.getElementById("join-game-form").addEventListener("submit", async (event) => {
   event.preventDefault();
+  playSound("click");
   let form = event.target;
   let button = form.querySelector("button");
   button.disabled = true;
@@ -334,7 +407,11 @@ document.getElementById("join-game-form").addEventListener("submit", async (even
     gameQuestionView.classList.add("hidden");
     gamePointsView.classList.add("hidden");
     gameLeaderboardView.classList.add("hidden");
+    gamePodiumView.classList.add("hidden");
     gameStatus.textContent = "Joined! Waiting for the professor to start.";
+    myLastScore = 0;
+    lastScores.clear();
+    confettiFired = false;
     connect(game.id);
   } catch (err) {
     setStudentDashboardMessage(err.message);
