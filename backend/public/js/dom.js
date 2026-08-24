@@ -57,6 +57,19 @@ export function animateNumber(el, from, to, duration = 500) {
   requestAnimationFrame(step);
 }
 
+export function playEntrance(el, animateClasses, delayMs) {
+  if (!el) return;
+  let allClasses = ["animate__animated", ...animateClasses];
+  el.classList.remove(...allClasses);
+  el.style.animationDelay = "";
+  // Force a reflow so the browser notices the classes were removed before
+  // they're re-added — otherwise a replay (e.g. the next question) is a
+  // no-op since the element never left the "already animated" state.
+  void el.offsetWidth;
+  if (delayMs) el.style.animationDelay = `${delayMs}ms`;
+  el.classList.add(...allClasses);
+}
+
 export async function loadLeaderboard(gameId, listEl) {
   try {
     let data = await apiRequest(`/games/${gameId}/leaderboard`);

@@ -1,5 +1,5 @@
 import { submitForm } from "./api.js";
-import { setDashboardMessage, escapeHtml, animateNumber } from "./dom.js";
+import { setDashboardMessage, escapeHtml, animateNumber, playEntrance } from "./dom.js";
 import { registerLogoutCleanup } from "./auth.js";
 import { openAnalytics } from "./analytics.js";
 import { playSound } from "./sound.js";
@@ -31,11 +31,15 @@ let reconnectTimer = null;
 let lastScores = new Map();
 let lastTickSecond = null;
 let confettiFired = false;
+let lastRenderedQuestionIndex = null;
 
 const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_DELAY_MS = 1500;
 const URGENT_SECONDS = 5;
 const TICK_SECONDS = 3;
+const LEADERBOARD_ROW_STAGGER_MS = 70;
+const MAX_STAGGERED_ROWS = 6;
+const PODIUM_FIRST_DELAY_MS = 2000;
 
 registerLogoutCleanup(() => {
   closeSocket();
@@ -47,6 +51,7 @@ registerLogoutCleanup(() => {
   currentSetTitle = null;
   lastScores.clear();
   confettiFired = false;
+  lastRenderedQuestionIndex = null;
 });
 
 function closeSocket() {
@@ -131,6 +136,8 @@ function renderWsLeaderboard(players, listEl, skipTopN) {
     item.appendChild(scoreWrap);
 
     listEl.appendChild(item);
+    let staggerDelay = Math.min(i, MAX_STAGGERED_ROWS) * LEADERBOARD_ROW_STAGGER_MS;
+    playEntrance(item, ["animate__fadeInUp", "animate__faster"], staggerDelay);
     animateNumber(scoreSpan, previous, player.score);
     lastScores.set(player.id, player.score);
   });
@@ -138,34 +145,62 @@ function renderWsLeaderboard(players, listEl, skipTopN) {
 
 function renderPodium(players) {
   let top3 = players.slice(0, 3);
-  let slots = [
-    { name: document.getElementById("host-podium-1-name"), score: document.getElementById("host-podium-1-score") },
-    { name: document.getElementById("host-podium-2-name"), score: document.getElementById("host-podium-2-score") },
-    { name: document.getElementById("host-podium-3-name"), score: document.getElementById("host-podium-3-score") },
+  let podiumSlots = [
+    {
+      el: document.querySelector("#host-podium-view .podium-first"),
+      name: document.getElementById("host-podium-1-name"),
+      score: document.getElementById("host-podium-1-score"),
+      anim: ["animate__bounceIn"],
+      delay: PODIUM_FIRST_DELAY_MS,
+    },
+    {
+      el: document.querySelector("#host-podium-view .podium-second"),
+      name: document.getElementById("host-podium-2-name"),
+      score: document.getElementById("host-podium-2-score"),
+      anim: ["animate__fadeInUp", "animate__faster"],
+      delay: 1000,
+    },
+    {
+      el: document.querySelector("#host-podium-view .podium-third"),
+      name: document.getElementById("host-podium-3-name"),
+      score: document.getElementById("host-podium-3-score"),
+      anim: ["animate__fadeInUp", "animate__faster"],
+      delay: 0,
+    },
   ];
 
-  slots.forEach((slot, i) => {
+  // Unhide the podium container BEFORE touching any slot's animation classes:
+  // playEntrance()'s remove-reflow-readd cycle only resets a replayed
+  // animation correctly on an element that's actually laid out, not one
+  // still sitting inside a display:none ancestor.
+  hostPodiumView.classList.remove("hidden");
+
+  podiumSlots.forEach((slot, i) => {
     let player = top3[i];
     if (!player) {
       slot.name.textContent = "";
       slot.score.textContent = "";
+      slot.el.classList.add("hidden");
       return;
     }
+    slot.el.classList.remove("hidden");
     slot.name.textContent = player.username;
     let previous = lastScores.has(player.id) ? lastScores.get(player.id) : 0;
     slot.score.innerHTML = `<span class="podium-score-value"></span> pts`;
     animateNumber(slot.score.querySelector(".podium-score-value"), previous, player.score);
     lastScores.set(player.id, player.score);
+    playEntrance(slot.el, slot.anim, slot.delay);
   });
 
   renderWsLeaderboard(players, hostPodiumRestList, Math.min(3, players.length));
 
-  hostPodiumView.classList.remove("hidden");
   if (!confettiFired) {
     confettiFired = true;
-    if (typeof confetti === "function") {
-      confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 } });
-    }
+    setTimeout(() => {
+      if (typeof confetti === "function") {
+        confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 } });
+      }
+    }, PODIUM_FIRST_DELAY_MS);
   }
 }
 
@@ -214,6 +249,15 @@ function handleMessage(event) {
     hostQuestionView.classList.remove("hidden");
     hostQuestionTerm.textContent = message.term;
     startCountdown(Date.now() + message.timeLimit);
+
+    // A reconnect resends the SAME in-progress question (server has no
+    // "reveal" state, so sendCurrentQuestion() just replays whatever is
+    // current). Only play the entrance animation for a genuinely new index,
+    // not a resend of content already on screen.
+    if (message.index !== lastRenderedQuestionIndex) {
+      lastRenderedQuestionIndex = message.index;
+      playEntrance(hostQuestionView, ["animate__fadeInUp", "animate__faster"]);
+    }
     return;
   }
 
@@ -290,6 +334,7 @@ hostGameForm.addEventListener("submit", async (event) => {
     hostViewAnalyticsButton.classList.add("hidden");
     lastScores.clear();
     confettiFired = false;
+    lastRenderedQuestionIndex = null;
     setDashboardMessage(`Game created. Join code: ${game.join_code}`, true);
     connect(game.id);
   } catch (err) {

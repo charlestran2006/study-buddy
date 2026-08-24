@@ -1,5 +1,5 @@
 import { apiRequest, submitForm } from "./api.js";
-import { setStudentDashboardMessage, escapeHtml, animateNumber } from "./dom.js";
+import { setStudentDashboardMessage, escapeHtml, animateNumber, playEntrance } from "./dom.js";
 import { registerLogoutCleanup, registerStudentDashboardLoader } from "./auth.js";
 import { playSound } from "./sound.js";
 
@@ -81,11 +81,15 @@ let myLastScore = 0;
 let lastScores = new Map();
 let lastTickSecond = null;
 let confettiFired = false;
+let lastRenderedQuestionIndex = null;
 
 const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_DELAY_MS = 1500;
 const URGENT_SECONDS = 5;
 const TICK_SECONDS = 3;
+const LEADERBOARD_ROW_STAGGER_MS = 70;
+const MAX_STAGGERED_ROWS = 6;
+const PODIUM_FIRST_DELAY_MS = 2000;
 
 registerLogoutCleanup(() => {
   closeSocket();
@@ -95,6 +99,7 @@ registerLogoutCleanup(() => {
   myLastScore = 0;
   lastScores.clear();
   confettiFired = false;
+  lastRenderedQuestionIndex = null;
 });
 
 function closeSocket() {
@@ -171,6 +176,8 @@ function renderWsLeaderboard(players, listEl, skipTopN) {
     item.appendChild(scoreWrap);
 
     listEl.appendChild(item);
+    let staggerDelay = Math.min(i, MAX_STAGGERED_ROWS) * LEADERBOARD_ROW_STAGGER_MS;
+    playEntrance(item, ["animate__fadeInUp", "animate__faster"], staggerDelay);
     animateNumber(scoreSpan, previous, player.score);
     lastScores.set(player.id, player.score);
   });
@@ -178,34 +185,62 @@ function renderWsLeaderboard(players, listEl, skipTopN) {
 
 function renderPodium(players) {
   let top3 = players.slice(0, 3);
-  let slots = [
-    { name: document.getElementById("player-podium-1-name"), score: document.getElementById("player-podium-1-score") },
-    { name: document.getElementById("player-podium-2-name"), score: document.getElementById("player-podium-2-score") },
-    { name: document.getElementById("player-podium-3-name"), score: document.getElementById("player-podium-3-score") },
+  let podiumSlots = [
+    {
+      el: document.querySelector("#player-podium-view .podium-first"),
+      name: document.getElementById("player-podium-1-name"),
+      score: document.getElementById("player-podium-1-score"),
+      anim: ["animate__bounceIn"],
+      delay: PODIUM_FIRST_DELAY_MS,
+    },
+    {
+      el: document.querySelector("#player-podium-view .podium-second"),
+      name: document.getElementById("player-podium-2-name"),
+      score: document.getElementById("player-podium-2-score"),
+      anim: ["animate__fadeInUp", "animate__faster"],
+      delay: 1000,
+    },
+    {
+      el: document.querySelector("#player-podium-view .podium-third"),
+      name: document.getElementById("player-podium-3-name"),
+      score: document.getElementById("player-podium-3-score"),
+      anim: ["animate__fadeInUp", "animate__faster"],
+      delay: 0,
+    },
   ];
 
-  slots.forEach((slot, i) => {
+  // Unhide the podium container BEFORE touching any slot's animation classes:
+  // playEntrance()'s remove-reflow-readd cycle only resets a replayed
+  // animation correctly on an element that's actually laid out, not one
+  // still sitting inside a display:none ancestor.
+  gamePodiumView.classList.remove("hidden");
+
+  podiumSlots.forEach((slot, i) => {
     let player = top3[i];
     if (!player) {
       slot.name.textContent = "";
       slot.score.textContent = "";
+      slot.el.classList.add("hidden");
       return;
     }
+    slot.el.classList.remove("hidden");
     slot.name.textContent = player.username;
     let previous = lastScores.has(player.id) ? lastScores.get(player.id) : 0;
     slot.score.innerHTML = `<span class="podium-score-value"></span> pts`;
     animateNumber(slot.score.querySelector(".podium-score-value"), previous, player.score);
     lastScores.set(player.id, player.score);
+    playEntrance(slot.el, slot.anim, slot.delay);
   });
 
   renderWsLeaderboard(players, gamePodiumRestList, Math.min(3, players.length));
 
-  gamePodiumView.classList.remove("hidden");
   if (!confettiFired) {
     confettiFired = true;
-    if (typeof confetti === "function") {
-      confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 } });
-    }
+    setTimeout(() => {
+      if (typeof confetti === "function") {
+        confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 } });
+      }
+    }, PODIUM_FIRST_DELAY_MS);
   }
 }
 
@@ -250,10 +285,12 @@ function renderPointsResult(message) {
     gamePointsValue.textContent = `+${message.points_awarded} pts`;
     gamePointsValue.classList.add("correct");
     playSound("correct");
+    playEntrance(gamePointsView, ["animate__zoomIn"]);
   } else {
     gamePointsValue.textContent = "Incorrect";
     gamePointsValue.classList.add("incorrect");
     playSound("incorrect");
+    playEntrance(gamePointsView, ["animate__fadeIn", "animate__faster"]);
   }
 
   gamePointsReason.textContent = message.reason;
@@ -288,6 +325,7 @@ function renderRevealChoices(correctIndex) {
 
     if (index === correctIndex) {
       button.classList.add("correct");
+      playEntrance(button, ["animate__pulse", "animate__faster"]);
     } else if (index === selectedChoiceIndex) {
       button.classList.add("incorrect");
     }
@@ -320,6 +358,15 @@ function handleMessage(event) {
     lastQuestionChoices = message.choices;
     renderChoices(message.choices);
     startCountdown(Date.now() + message.timeLimit);
+
+    // A reconnect resends the SAME in-progress question (server has no
+    // "reveal" state, so sendCurrentQuestion() just replays whatever is
+    // current). Only play the entrance animation for a genuinely new index,
+    // not a resend of content already on screen.
+    if (message.index !== lastRenderedQuestionIndex) {
+      lastRenderedQuestionIndex = message.index;
+      playEntrance(gameQuestionView, ["animate__fadeInUp", "animate__faster"]);
+    }
     return;
   }
 
@@ -330,8 +377,8 @@ function handleMessage(event) {
     }
     gameStatus.textContent = "";
     gameQuestionView.classList.add("hidden");
-    renderPointsResult(message);
     gamePointsView.classList.remove("hidden");
+    renderPointsResult(message);
     return;
   }
 
@@ -412,6 +459,7 @@ document.getElementById("join-game-form").addEventListener("submit", async (even
     myLastScore = 0;
     lastScores.clear();
     confettiFired = false;
+    lastRenderedQuestionIndex = null;
     connect(game.id);
   } catch (err) {
     setStudentDashboardMessage(err.message);
