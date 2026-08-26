@@ -14,7 +14,7 @@ export async function loadClassrooms() {
   }
 }
 
-function renderRoster(rosterList, students) {
+function renderRoster(rosterList, students, classroomId, onRemoved) {
   rosterList.innerHTML = "";
 
   if (students.length === 0) {
@@ -26,9 +26,27 @@ function renderRoster(rosterList, students) {
     let item = document.createElement("li");
     item.className = "roster-item";
     item.innerHTML = `
-      <span class="roster-name">${escapeHtml(student.username)}</span>
-      <span class="roster-email">${escapeHtml(student.email)}</span>
+      <span class="roster-info">
+        <span class="roster-name">${escapeHtml(student.username)}</span>
+        <span class="roster-email">${escapeHtml(student.email)}</span>
+      </span>
+      <button type="button" class="roster-remove-button">Remove</button>
     `;
+
+    item.querySelector(".roster-remove-button").addEventListener("click", async (event) => {
+      let button = event.target;
+      button.disabled = true;
+
+      try {
+        await apiRequest(`/classrooms/${classroomId}/students/${student.id}`, { method: "DELETE" });
+        item.remove();
+        onRemoved();
+      } catch (err) {
+        setDashboardMessage(err.message);
+        button.disabled = false;
+      }
+    });
+
     rosterList.appendChild(item);
   });
 }
@@ -53,10 +71,12 @@ function renderClassrooms(classrooms) {
     joinCodeSpan.title = "Click to copy join code";
     joinCodeSpan.addEventListener("click", () => copyToClipboard(classroom.join_code));
 
+    let studentCount = classroom.student_count;
+
     item.innerHTML = `
       <div class="classroom-name">${escapeHtml(classroom.name)}</div>
       <div class="classroom-meta">
-        ${classroom.student_count} student${classroom.student_count === 1 ? "" : "s"} &middot;
+        <span class="student-count-text"></span> &middot;
         join code
       </div>
       <button type="button" class="roster-toggle-button">View Roster</button>
@@ -64,9 +84,33 @@ function renderClassrooms(classrooms) {
     `;
     item.querySelector(".classroom-meta").appendChild(joinCodeSpan);
 
+    let countText = item.querySelector(".student-count-text");
+    function updateCountText() {
+      countText.textContent = `${studentCount} student${studentCount === 1 ? "" : "s"}`;
+    }
+    updateCountText();
+
     let rosterButton = item.querySelector(".roster-toggle-button");
     let rosterList = item.querySelector(".roster-list");
     let rosterLoaded = false;
+
+    async function loadRoster() {
+      rosterButton.disabled = true;
+      try {
+        let details = await apiRequest(`/classrooms/${classroom.id}`);
+        studentCount = details.students.length;
+        updateCountText();
+        renderRoster(rosterList, details.students, classroom.id, () => {
+          studentCount -= 1;
+          updateCountText();
+        });
+        rosterLoaded = true;
+      } catch (err) {
+        setDashboardMessage(err.message);
+      } finally {
+        rosterButton.disabled = false;
+      }
+    }
 
     rosterButton.addEventListener("click", async () => {
       let isHidden = rosterList.classList.contains("hidden");
@@ -78,17 +122,7 @@ function renderClassrooms(classrooms) {
       }
 
       if (!rosterLoaded) {
-        rosterButton.disabled = true;
-        try {
-          let details = await apiRequest(`/classrooms/${classroom.id}`);
-          renderRoster(rosterList, details.students);
-          rosterLoaded = true;
-        } catch (err) {
-          setDashboardMessage(err.message);
-          return;
-        } finally {
-          rosterButton.disabled = false;
-        }
+        await loadRoster();
       }
 
       rosterList.classList.remove("hidden");

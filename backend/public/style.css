@@ -315,6 +315,7 @@ body {
 
 .roster-item {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 6px 10px;
@@ -323,12 +324,38 @@ body {
   font-size: 0.85rem;
 }
 
+.roster-info {
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+}
+
 .roster-item .roster-name {
   font-weight: 600;
 }
 
 .roster-item .roster-email {
   color: #6b7280;
+}
+
+.roster-remove-button {
+  padding: 3px 8px;
+  border: 1px solid #f5b5b5;
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--kahoot-red);
+  cursor: pointer;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.roster-remove-button:hover {
+  background: #fdeaea;
+}
+
+.roster-remove-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .empty-state {

@@ -113,6 +113,47 @@ router.get("/classrooms/:id", requireAuth, requireProfessor, (req, res) => {
   );
 });
 
+router.delete("/classrooms/:id/students/:studentId", requireAuth, requireProfessor, (req, res) => {
+  let classroomId = req.params.id;
+  let studentId = req.params.studentId;
+
+  pool.query(
+    "SELECT id FROM classrooms WHERE id = $1 AND professor_id = $2",
+    [classroomId, req.session.userId],
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(500).json({ error: "something went wrong" });
+        return;
+      }
+
+      if (result.rows.length === 0) {
+        res.status(404).json({ error: "classroom not found" });
+        return;
+      }
+
+      pool.query(
+        "DELETE FROM classroom_students WHERE classroom_id = $1 AND student_id = $2 RETURNING id",
+        [classroomId, studentId],
+        (err, deleteResult) => {
+          if (err) {
+            console.log(err);
+            res.status(500).json({ error: "something went wrong" });
+            return;
+          }
+
+          if (deleteResult.rows.length === 0) {
+            res.status(404).json({ error: "student not in this classroom" });
+            return;
+          }
+
+          res.status(200).json({ ok: true });
+        }
+      );
+    }
+  );
+});
+
 router.post("/classrooms/join", requireAuth, requireStudent, (req, res) => {
   let code = req.body.code;
 
