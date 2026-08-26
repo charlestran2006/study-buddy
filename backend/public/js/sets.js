@@ -96,6 +96,7 @@ document.getElementById("create-set-form").addEventListener("submit", async (eve
       title: form.title.value,
       description: form.description.value,
       terms,
+      is_public: form.is_public.checked,
     });
     form.reset();
     termRows.innerHTML = "";

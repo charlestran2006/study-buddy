@@ -8,6 +8,7 @@ router.post("/sets", requireAuth, requireProfessor, (req, res) => {
   let title = req.body.title;
   let description = req.body.description || null;
   let terms = req.body.terms;
+  let isPublic = Boolean(req.body.is_public);
 
   if (!title || !Array.isArray(terms) || terms.length === 0) {
     res.status(400).json({ error: "missing fields" });
@@ -22,8 +23,8 @@ router.post("/sets", requireAuth, requireProfessor, (req, res) => {
   }
 
   pool.query(
-    "INSERT INTO sets (user_id, title, description) VALUES ($1, $2, $3) RETURNING id, title, description, created_at",
-    [req.session.userId, title, description],
+    "INSERT INTO sets (user_id, title, description, is_public) VALUES ($1, $2, $3, $4) RETURNING id, title, description, is_public, created_at",
+    [req.session.userId, title, description, isPublic],
     (err, result) => {
       if (err) {
         console.log(err);
@@ -60,7 +61,7 @@ router.post("/sets", requireAuth, requireProfessor, (req, res) => {
 
 router.get("/sets", requireAuth, requireProfessor, (req, res) => {
   pool.query(
-    "SELECT id, title, description, created_at FROM sets WHERE user_id = $1 ORDER BY created_at DESC",
+    "SELECT id, title, description, is_public, created_at FROM sets WHERE user_id = $1 ORDER BY created_at DESC",
     [req.session.userId],
     (err, result) => {
       if (err) {
@@ -180,4 +181,53 @@ router.get("/sets/:id/heatmap", requireAuth, requireProfessor, async (req, res) 
     res.status(500).json({ error: "something went wrong" });
   }
 });
+router.get("/public-sets", requireAuth, async (req, res) => {
+  try {
+    let result = await pool.query(
+      `SELECT s.id, s.title, s.description, s.created_at, u.username AS professor_username,
+              COUNT(t.id)::int AS term_count
+       FROM sets s
+       JOIN users u ON u.id = s.user_id
+       LEFT JOIN terms t ON t.set_id = s.id
+       WHERE s.is_public = TRUE
+       GROUP BY s.id, u.username
+       ORDER BY s.created_at DESC`
+    );
+
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "something went wrong" });
+  }
+});
+
+router.get("/public-sets/:id", requireAuth, async (req, res) => {
+  let setId = req.params.id;
+
+  try {
+    let setResult = await pool.query(
+      `SELECT s.id, s.title, s.description, u.username AS professor_username
+       FROM sets s
+       JOIN users u ON u.id = s.user_id
+       WHERE s.id = $1 AND s.is_public = TRUE`,
+      [setId]
+    );
+
+    if (setResult.rows.length === 0) {
+      res.status(404).json({ error: "study set not found" });
+      return;
+    }
+
+    let termsResult = await pool.query(
+      "SELECT id, term, definition, position FROM terms WHERE set_id = $1 ORDER BY position ASC",
+      [setId]
+    );
+
+    res.status(200).json({ ...setResult.rows[0], terms: termsResult.rows });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "something went wrong" });
+  }
+});
+
 module.exports = router;
