@@ -289,6 +289,48 @@ body {
   border-radius: 4px;
 }
 
+.roster-toggle-button {
+  margin-top: 8px;
+  padding: 4px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--kahoot-purple);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.roster-toggle-button:hover {
+  background: #f3f0fb;
+}
+
+.roster-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.roster-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #f4f5f7;
+  font-size: 0.85rem;
+}
+
+.roster-item .roster-name {
+  font-weight: 600;
+}
+
+.roster-item .roster-email {
+  color: #6b7280;
+}
+
 .empty-state {
   padding: 28px 16px;
   text-align: center;

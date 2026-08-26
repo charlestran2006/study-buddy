@@ -14,6 +14,25 @@ export async function loadClassrooms() {
   }
 }
 
+function renderRoster(rosterList, students) {
+  rosterList.innerHTML = "";
+
+  if (students.length === 0) {
+    rosterList.innerHTML = '<li class="empty-state">No students have joined yet.</li>';
+    return;
+  }
+
+  students.forEach((student) => {
+    let item = document.createElement("li");
+    item.className = "roster-item";
+    item.innerHTML = `
+      <span class="roster-name">${escapeHtml(student.username)}</span>
+      <span class="roster-email">${escapeHtml(student.email)}</span>
+    `;
+    rosterList.appendChild(item);
+  });
+}
+
 function renderClassrooms(classrooms) {
   classroomList.innerHTML = "";
   assignClassroomSelect.innerHTML = "";
@@ -38,10 +57,44 @@ function renderClassrooms(classrooms) {
       <div class="classroom-name">${escapeHtml(classroom.name)}</div>
       <div class="classroom-meta">
         ${classroom.student_count} student${classroom.student_count === 1 ? "" : "s"} &middot;
-        join code 
+        join code
       </div>
+      <button type="button" class="roster-toggle-button">View Roster</button>
+      <ul class="roster-list hidden"></ul>
     `;
     item.querySelector(".classroom-meta").appendChild(joinCodeSpan);
+
+    let rosterButton = item.querySelector(".roster-toggle-button");
+    let rosterList = item.querySelector(".roster-list");
+    let rosterLoaded = false;
+
+    rosterButton.addEventListener("click", async () => {
+      let isHidden = rosterList.classList.contains("hidden");
+
+      if (!isHidden) {
+        rosterList.classList.add("hidden");
+        rosterButton.textContent = "View Roster";
+        return;
+      }
+
+      if (!rosterLoaded) {
+        rosterButton.disabled = true;
+        try {
+          let details = await apiRequest(`/classrooms/${classroom.id}`);
+          renderRoster(rosterList, details.students);
+          rosterLoaded = true;
+        } catch (err) {
+          setDashboardMessage(err.message);
+          return;
+        } finally {
+          rosterButton.disabled = false;
+        }
+      }
+
+      rosterList.classList.remove("hidden");
+      rosterButton.textContent = "Hide Roster";
+    });
+
     classroomList.appendChild(item);
 
     let option = document.createElement("option");
