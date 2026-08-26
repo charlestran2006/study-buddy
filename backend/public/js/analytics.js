@@ -212,7 +212,6 @@ async function loadHeatmap() {
   }
 }
 
-
 analyticsStudentSelect.addEventListener("change", loadHeatmap);
 
 analyticsBackButton.addEventListener("click", () => {
