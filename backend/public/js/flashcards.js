@@ -2,7 +2,7 @@ import { apiRequest } from "./api.js";
 import { setStudentDashboardMessage } from "./dom.js";
 import { registerStudentDashboardLoader } from "./auth.js";
 
-let classroomSelect = document.getElementById("study-classroom-select");
+let studySelect = document.getElementById("study-classroom-select");
 let viewer = document.getElementById("flashcard-viewer");
 let setTitle = document.getElementById("flashcard-set-title");
 let card = document.getElementById("flashcard");
@@ -13,33 +13,86 @@ let terms = [];
 let index = 0;
 let showingDefinition = false;
 
-registerStudentDashboardLoader(loadClassroomOptions);
+registerStudentDashboardLoader(loadStudySetOptions);
 
-async function loadClassroomOptions() {
+export async function loadStudySetOptions() {
   try {
-    let classrooms = await apiRequest("/my-classrooms");
-    classroomSelect.innerHTML = "";
-    classrooms.forEach((classroom) => {
+    let sets = await apiRequest("/api/my-study-sets");
+    studySelect.innerHTML = "";
+
+    if (!sets || sets.length === 0) {
       let option = document.createElement("option");
-      option.value = classroom.id;
-      option.textContent = classroom.name;
-      classroomSelect.appendChild(option);
+      option.value = "";
+      option.textContent = "No study sets available yet";
+      studySelect.appendChild(option);
+      return;
+    }
+
+    let groups = {};
+    sets.forEach((set) => {
+      let groupName = set.source_type || "Other Sets";
+      if (!groups[groupName]) {
+        groups[groupName] = [];
+      }
+      groups[groupName].push(set);
+    });
+
+    Object.entries(groups).forEach(([groupName, groupSets]) => {
+      let optgroup = document.createElement("optgroup");
+      optgroup.label = groupName;
+
+      groupSets.forEach((set) => {
+        let option = document.createElement("option");
+        option.value = `set:${set.id}`;
+        let extra = set.classroom_names ? ` (${set.classroom_names})` : "";
+        option.textContent = `${set.title}${extra} - ${set.term_count} terms`;
+        optgroup.appendChild(option);
+      });
+
+      studySelect.appendChild(optgroup);
     });
   } catch (err) {
-    setStudentDashboardMessage(err.message);
+    // Fallback to my-classrooms if needed
+    try {
+      let classrooms = await apiRequest("/my-classrooms");
+      studySelect.innerHTML = "";
+      classrooms.forEach((c) => {
+        let opt = document.createElement("option");
+        opt.value = `class:${c.id}`;
+        opt.textContent = c.name;
+        studySelect.appendChild(opt);
+      });
+    } catch {
+      setStudentDashboardMessage(err.message);
+    }
   }
 }
 
 document.getElementById("study-select-form").addEventListener("submit", async (event) => {
   event.preventDefault();
-  let classroomId = classroomSelect.value;
+  let selectedVal = studySelect.value;
 
-  if (!classroomId) {
+  if (!selectedVal) {
     return;
   }
 
   try {
-    let studySet = await apiRequest(`/api/classrooms/${classroomId}/assignment`);
+    let studySet;
+    if (selectedVal.startsWith("set:")) {
+      let setId = selectedVal.replace("set:", "");
+      studySet = await apiRequest(`/api/sets/${setId}/study`);
+    } else if (selectedVal.startsWith("class:")) {
+      let classroomId = selectedVal.replace("class:", "");
+      studySet = await apiRequest(`/api/classrooms/${classroomId}/assignment`);
+    } else {
+      // Direct number or fallback
+      try {
+        studySet = await apiRequest(`/api/sets/${selectedVal}/study`);
+      } catch {
+        studySet = await apiRequest(`/api/classrooms/${selectedVal}/assignment`);
+      }
+    }
+
     showFlashcards(studySet.title, studySet.terms);
   } catch (err) {
     viewer.classList.add("hidden");
@@ -47,7 +100,21 @@ document.getElementById("study-select-form").addEventListener("submit", async (e
   }
 });
 
+export async function startStudyForSet(setId) {
+  try {
+    let studySet = await apiRequest(`/api/sets/${setId}/study`);
+    showFlashcards(studySet.title, studySet.terms);
+    document.querySelector('#student-tabs [data-target="panel-stu-study"]')?.click();
+  } catch (err) {
+    setStudentDashboardMessage(err.message);
+  }
+}
+
 export function showFlashcards(title, termsList) {
+  if (!termsList || termsList.length === 0) {
+    setStudentDashboardMessage("This study set has no terms to display.");
+    return;
+  }
   terms = termsList;
   index = 0;
   showingDefinition = false;
@@ -80,3 +147,4 @@ document.getElementById("flashcard-next").addEventListener("click", () => {
   showingDefinition = false;
   renderCard();
 });
+

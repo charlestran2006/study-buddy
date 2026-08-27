@@ -2,7 +2,7 @@ import { apiRequest } from "./api.js";
 import { setStudentDashboardMessage } from "./dom.js";
 import { registerStudentDashboardLoader } from "./auth.js";
 
-let classroomSelect = document.getElementById("practice-classroom-select");
+let practiceSelect = document.getElementById("practice-classroom-select");
 let selectForm = document.getElementById("practice-select-form");
 let quiz = document.getElementById("practice-quiz");
 let summary = document.getElementById("practice-summary");
@@ -18,52 +18,117 @@ let index = 0;
 let correctCount = 0;
 let answering = false;
 
-registerStudentDashboardLoader(loadClassroomOptions);
+registerStudentDashboardLoader(loadPracticeSetOptions);
 
-async function loadClassroomOptions() {
+export async function loadPracticeSetOptions() {
   try {
-    let classrooms = await apiRequest("/my-classrooms");
-    classroomSelect.innerHTML = "";
-    classrooms.forEach((classroom) => {
+    let sets = await apiRequest("/api/my-study-sets");
+    practiceSelect.innerHTML = "";
+
+    if (!sets || sets.length === 0) {
       let option = document.createElement("option");
-      option.value = classroom.id;
-      option.textContent = classroom.name;
-      classroomSelect.appendChild(option);
+      option.value = "";
+      option.textContent = "No study sets available yet";
+      practiceSelect.appendChild(option);
+      return;
+    }
+
+    let groups = {};
+    sets.forEach((set) => {
+      let groupName = set.source_type || "Other Sets";
+      if (!groups[groupName]) {
+        groups[groupName] = [];
+      }
+      groups[groupName].push(set);
+    });
+
+    Object.entries(groups).forEach(([groupName, groupSets]) => {
+      let optgroup = document.createElement("optgroup");
+      optgroup.label = groupName;
+
+      groupSets.forEach((set) => {
+        let option = document.createElement("option");
+        option.value = `set:${set.id}`;
+        let extra = set.classroom_names ? ` (${set.classroom_names})` : "";
+        option.textContent = `${set.title}${extra} - ${set.term_count} terms`;
+        optgroup.appendChild(option);
+      });
+
+      practiceSelect.appendChild(optgroup);
     });
   } catch (err) {
-    setStudentDashboardMessage(err.message);
+    try {
+      let classrooms = await apiRequest("/my-classrooms");
+      practiceSelect.innerHTML = "";
+      classrooms.forEach((c) => {
+        let opt = document.createElement("option");
+        opt.value = `class:${c.id}`;
+        opt.textContent = c.name;
+        practiceSelect.appendChild(opt);
+      });
+    } catch {
+      setStudentDashboardMessage(err.message);
+    }
   }
 }
 
 selectForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  let classroomId = classroomSelect.value;
+  let selectedVal = practiceSelect.value;
 
-  if (!classroomId) {
+  if (!selectedVal) {
     return;
   }
 
   try {
-    let studySet = await apiRequest(`/api/classrooms/${classroomId}/assignment`);
-
-    if (studySet.terms.length < 2) {
-      setStudentDashboardMessage("Need at least 2 terms in the set to practice.");
-      return;
+    let studySet;
+    if (selectedVal.startsWith("set:")) {
+      let setId = selectedVal.replace("set:", "");
+      studySet = await apiRequest(`/api/sets/${setId}/study`);
+    } else if (selectedVal.startsWith("class:")) {
+      let classroomId = selectedVal.replace("class:", "");
+      studySet = await apiRequest(`/api/classrooms/${classroomId}/assignment`);
+    } else {
+      try {
+        studySet = await apiRequest(`/api/sets/${selectedVal}/study`);
+      } catch {
+        studySet = await apiRequest(`/api/classrooms/${selectedVal}/assignment`);
+      }
     }
 
-    terms = studySet.terms;
-    order = shuffle(terms.map((_, i) => i));
-    index = 0;
-    correctCount = 0;
-    selectForm.classList.add("hidden");
-    summary.classList.add("hidden");
-    quiz.classList.remove("hidden");
-    showQuestion();
+    startPracticeWithTerms(studySet.terms);
   } catch (err) {
     quiz.classList.add("hidden");
     setStudentDashboardMessage(err.message);
   }
 });
+
+export async function startPracticeForSet(setId) {
+  try {
+    let studySet = await apiRequest(`/api/sets/${setId}/study`);
+    startPracticeWithTerms(studySet.terms);
+    document.querySelector('#student-tabs [data-target="panel-stu-practice"]')?.click();
+  } catch (err) {
+    quiz.classList.add("hidden");
+    setStudentDashboardMessage(err.message);
+  }
+}
+
+export function startPracticeWithTerms(termsList) {
+  if (!termsList || termsList.length < 2) {
+    setStudentDashboardMessage("Need at least 2 terms in the set to practice.");
+    return;
+  }
+
+  terms = termsList;
+  order = shuffle(terms.map((_, i) => i));
+  index = 0;
+  correctCount = 0;
+  selectForm.classList.add("hidden");
+  summary.classList.add("hidden");
+  quiz.classList.remove("hidden");
+  showQuestion();
+}
 
 function shuffle(array) {
   let copy = array.slice();
@@ -142,3 +207,4 @@ document.getElementById("practice-restart-button").addEventListener("click", () 
   summary.classList.add("hidden");
   selectForm.classList.remove("hidden");
 });
+
