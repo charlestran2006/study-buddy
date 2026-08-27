@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Study Buddy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="/icon.png">
@@ -16,11 +19,13 @@
     aria-pressed="false"
     aria-label="Mute sound"
     title="Mute sound"
-  >🔊</button>
+  >Sound</button>
 
+  <!-- AUTH VIEW -->
   <div id="auth-view">
     <main class="auth-card">
       <h1 class="logo">Study Buddy</h1>
+      <p class="auth-subtitle">Interactive Study Sets & Live Classroom Games</p>
 
       <div class="tabs" role="tablist">
         <button type="button" class="tab active" data-target="login-form" role="tab" aria-selected="true">
@@ -35,26 +40,26 @@
 
       <form id="login-form" class="auth-form">
         <label for="login-username">Username</label>
-        <input id="login-username" name="username" type="text" autocomplete="username" required />
+        <input id="login-username" name="username" type="text" autocomplete="username" placeholder="Enter username" required />
 
         <label for="login-password">Password</label>
-        <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+        <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Enter password" required />
 
         <button type="submit">Log In</button>
       </form>
 
       <form id="signup-form" class="auth-form hidden">
         <label for="signup-username">Username</label>
-        <input id="signup-username" name="username" type="text" autocomplete="username" required />
+        <input id="signup-username" name="username" type="text" autocomplete="username" placeholder="Choose a username" required />
 
         <label for="signup-email">Email</label>
-        <input id="signup-email" name="email" type="email" autocomplete="email" required />
+        <input id="signup-email" name="email" type="email" autocomplete="email" placeholder="name@example.com" required />
 
         <label for="signup-password">Password</label>
-        <input id="signup-password" name="password" type="password" autocomplete="new-password" required />
+        <input id="signup-password" name="password" type="password" autocomplete="new-password" placeholder="Create a password" required />
 
         <fieldset class="role-picker">
-          <legend>I am a</legend>
+          <legend>Role</legend>
           <label class="role-option">
             <input type="radio" name="role" value="student" checked />
             Student
@@ -70,322 +75,394 @@
     </main>
   </div>
 
-  <div id="dashboard-view" class="hidden">
-    <header class="dashboard-header">
-      <h1 class="logo">Study Buddy</h1>
-      <div class="dashboard-header-right">
-        <span id="dashboard-username"></span>
-        <button type="button" id="logout-button">Log Out</button>
+  <!-- PROFESSOR DASHBOARD VIEW -->
+  <div id="dashboard-view" class="app-layout hidden">
+    <!-- LEFT SIDEBAR -->
+    <aside class="app-sidebar">
+      <div class="sidebar-header">
+        <h1 class="logo">Study Buddy</h1>
       </div>
-    </header>
 
-    <p class="message" id="dashboard-message" role="alert"></p>
 
-    <nav class="tabs dashboard-tabs" id="professor-tabs">
-      <button type="button" class="tab active" data-target="panel-prof-classrooms">Classrooms</button>
-      <button type="button" class="tab" data-target="panel-prof-sets">Study Sets</button>
-      <button type="button" class="tab" data-target="panel-prof-assign">Assign</button>
-      <button type="button" class="tab" data-target="panel-prof-public">Public Sets</button>
-      <button type="button" class="tab" data-target="panel-prof-favorites">Favorites</button>
-      <button type="button" class="tab" data-target="panel-prof-game">Live Game</button>
-    </nav>
+      <!-- VERTICAL NAV TABS -->
+      <nav class="sidebar-nav" id="professor-tabs">
+        <button type="button" class="tab active" data-target="panel-prof-classrooms">Classrooms</button>
+        <button type="button" class="tab" data-target="panel-prof-sets">Study Sets</button>
+        <button type="button" class="tab" data-target="panel-prof-assign">Assign Set</button>
+        <button type="button" class="tab" data-target="panel-prof-public">Public Sets</button>
+        <button type="button" class="tab" data-target="panel-prof-favorites">Favorites</button>
+        <button type="button" class="tab" data-target="panel-prof-game">Live Game</button>
+      </nav>
 
-    <main class="dashboard-grid">
-      <section class="panel" id="panel-prof-classrooms">
-        <h2>Your Classrooms</h2>
-        <ul id="classroom-list" class="classroom-list"></ul>
-
-        <form id="create-classroom-form" class="panel-form">
-          <label for="classroom-name">Classroom name</label>
-          <input id="classroom-name" name="name" type="text" required />
-          <button type="submit">Create Classroom</button>
-        </form>
-      </section>
-
-      <section class="panel hidden" id="panel-prof-sets">
-        <h2>Your Study Sets</h2>
-        <ul id="set-list" class="classroom-list"></ul>
-
-        <h2>Create a Study Set</h2>
-        <form id="create-set-form" class="panel-form">
-          <label for="set-title">Title</label>
-          <input id="set-title" name="title" type="text" required />
-
-          <label for="set-description">Description</label>
-          <textarea id="set-description" name="description" rows="2"></textarea>
-
-          <div id="term-rows" class="term-rows"></div>
-          <button type="button" id="add-term-row">+ Add Term</button>
-
-          <label class="checkbox-option">
-            <input id="set-is-public" name="is_public" type="checkbox" />
-            Make this set public (visible to all students)
-          </label>
-
-          <button type="submit">Create Study Set</button>
-        </form>
-      </section>
-
-      <section class="panel hidden" id="panel-prof-assign">
-        <h2>Assign a Study Set</h2>
-        <form id="assign-set-form" class="panel-form">
-          <label for="assign-set-select">Study set</label>
-          <select id="assign-set-select" name="set_id" required></select>
-
-          <label for="assign-classroom-select">Classroom</label>
-          <select id="assign-classroom-select" name="classroom_id" required></select>
-
-          <button type="submit">Assign</button>
-        </form>
-      </section>
-
-      <section class="panel hidden" id="panel-prof-public">
-        <h2>Public Study Sets</h2>
-        <ul id="prof-public-set-list" class="classroom-list"></ul>
-      </section>
-
-      <section class="panel hidden" id="panel-prof-favorites">
-        <h2>Your Favorites</h2>
-        <ul id="prof-favorite-set-list" class="classroom-list"></ul>
-      </section>
-
-      <section class="panel hidden" id="panel-prof-game">
-        <h2>Live Game</h2>
-        <form id="host-game-form" class="panel-form">
-          <label for="host-classroom-select">Classroom</label>
-          <select id="host-classroom-select" name="classroom_id" required></select>
-
-          <label for="host-set-select">Study set</label>
-          <select id="host-set-select" name="set_id" required></select>
-
-          <button type="submit">Host Game</button>
-        </form>
-
-        <div id="host-game-live" class="game-live hidden">
-          <p id="host-game-status" class="game-status"></p>
-          <button type="button" id="host-start-game-button">Start Game</button>
-          <h3>Players</h3>
-          <ul id="host-player-list" class="player-list"></ul>
-
-          <div id="host-question-view" class="question-view hidden">
-            <p class="question-term" id="host-question-term"></p>
-            <p id="host-question-meta"></p>
-          </div>
-
-          <div id="host-leaderboard-view" class="leaderboard-view hidden">
-            <h3>Leaderboard</h3>
-            <ol id="host-leaderboard-list" class="leaderboard-list"></ol>
-            <button type="button" id="host-next-question-button" class="hidden">Next Question</button>
-          </div>
-
-          <div id="host-podium-view" class="podium-view hidden">
-            <h3>🏆 Final Results</h3>
-            <div class="podium">
-              <div class="podium-slot podium-second">
-                <div class="podium-card">
-                  <p class="podium-medal">🥈</p>
-                  <p class="podium-name" id="host-podium-2-name"></p>
-                  <p class="podium-score" id="host-podium-2-score"></p>
-                </div>
-              </div>
-              <div class="podium-slot podium-first">
-                <div class="podium-card">
-                  <p class="podium-medal">🥇</p>
-                  <p class="podium-name" id="host-podium-1-name"></p>
-                  <p class="podium-score" id="host-podium-1-score"></p>
-                </div>
-              </div>
-              <div class="podium-slot podium-third">
-                <div class="podium-card">
-                  <p class="podium-medal">🥉</p>
-                  <p class="podium-name" id="host-podium-3-name"></p>
-                  <p class="podium-score" id="host-podium-3-score"></p>
-                </div>
-              </div>
-            </div>
-            <ol id="host-podium-rest-list" class="leaderboard-list"></ol>
-            <button type="button" id="host-view-analytics-button" class="analytics-link-button hidden">View Struggle Analytics</button>
-          </div>
-
-          <button type="button" id="host-end-game-button">End Game</button>
+      <!-- SIDEBAR FOOTER -->
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <span id="dashboard-username" class="username-text"></span>
         </div>
-      </section>
+        <button type="button" id="logout-button" class="logout-action-btn">Log Out</button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="app-main-content">
+      <header class="main-topbar">
+        <div class="topbar-title">Professor Workspace</div>
+      </header>
+
+      <p class="message" id="dashboard-message" role="alert"></p>
+
+      <div class="dashboard-grid">
+        <!-- COMBINED CLASSROOMS PANEL -->
+        <section class="panel" id="panel-prof-classrooms">
+          <div class="panel-grid-2col">
+            <div class="panel-col">
+              <h2>Your Classrooms</h2>
+              <ul id="classroom-list" class="classroom-list"></ul>
+            </div>
+
+            <div class="panel-col">
+              <h2>Create Classroom</h2>
+              <form id="create-classroom-form" class="panel-form">
+                <label for="classroom-name">Classroom Name</label>
+                <input id="classroom-name" name="name" type="text" placeholder="e.g. CS 101" required />
+                <button type="submit">Create Classroom</button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- COMBINED STUDY SETS PANEL -->
+        <section class="panel hidden" id="panel-prof-sets">
+          <div class="panel-grid-2col">
+            <div class="panel-col">
+              <h2>Your Study Sets</h2>
+              <ul id="set-list" class="classroom-list"></ul>
+            </div>
+
+            <div class="panel-col">
+              <h2>Create Study Set</h2>
+              <form id="create-set-form" class="panel-form">
+                <label for="set-title">Title</label>
+                <input id="set-title" name="title" type="text" placeholder="Set title" required />
+
+                <label for="set-description">Description</label>
+                <textarea id="set-description" name="description" rows="2" placeholder="Description"></textarea>
+
+                <label>Terms & Definitions</label>
+                <div id="term-rows" class="term-rows"></div>
+                <button type="button" id="add-term-row">+ Add Term</button>
+
+                <label class="checkbox-option">
+                  <input id="set-is-public" name="is_public" type="checkbox" />
+                  Make public (visible to all students)
+                </label>
+
+                <button type="submit">Save Study Set</button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- ASSIGN PANEL -->
+        <section class="panel hidden" id="panel-prof-assign">
+          <h2>Assign Study Set</h2>
+          <form id="assign-set-form" class="panel-form card-form-compact">
+            <label for="assign-set-select">Study Set</label>
+            <select id="assign-set-select" name="set_id" required></select>
+
+            <label for="assign-classroom-select">Classroom</label>
+            <select id="assign-classroom-select" name="classroom_id" required></select>
+
+            <button type="submit">Assign</button>
+          </form>
+        </section>
+
+        <!-- PUBLIC SETS PANEL -->
+        <section class="panel hidden" id="panel-prof-public">
+          <h2>Public Sets</h2>
+          <ul id="prof-public-set-list" class="classroom-list"></ul>
+        </section>
+
+        <!-- FAVORITES PANEL -->
+        <section class="panel hidden" id="panel-prof-favorites">
+          <h2>Favorites</h2>
+          <ul id="prof-favorite-set-list" class="classroom-list"></ul>
+        </section>
+
+        <!-- LIVE GAME HOST PANEL -->
+        <section class="panel hidden" id="panel-prof-game">
+          <h2>Host Live Game</h2>
+          <form id="host-game-form" class="panel-form card-form-compact">
+            <label for="host-classroom-select">Classroom</label>
+            <select id="host-classroom-select" name="classroom_id" required></select>
+
+            <label for="host-set-select">Study Set</label>
+            <select id="host-set-select" name="set_id" required></select>
+
+            <button type="submit">Create Game Room</button>
+          </form>
+
+          <div id="host-game-live" class="game-live hidden">
+            <p id="host-game-status" class="game-status"></p>
+            <button type="button" id="host-start-game-button">Start Game</button>
+            <h3>Players</h3>
+            <ul id="host-player-list" class="player-list"></ul>
+
+            <div id="host-question-view" class="question-view hidden">
+              <p class="question-term" id="host-question-term"></p>
+              <p id="host-question-meta"></p>
+            </div>
+
+            <div id="host-leaderboard-view" class="leaderboard-view hidden">
+              <h3>Leaderboard</h3>
+              <ol id="host-leaderboard-list" class="leaderboard-list"></ol>
+              <button type="button" id="host-next-question-button" class="hidden">Next Question</button>
+            </div>
+
+            <div id="host-podium-view" class="podium-view hidden">
+              <h3>Final Results</h3>
+              <div class="podium">
+                <div class="podium-slot podium-second">
+                  <div class="podium-card">
+                    <p class="podium-medal">2nd</p>
+                    <p class="podium-name" id="host-podium-2-name"></p>
+                    <p class="podium-score" id="host-podium-2-score"></p>
+                  </div>
+                </div>
+                <div class="podium-slot podium-first">
+                  <div class="podium-card">
+                    <p class="podium-medal">1st</p>
+                    <p class="podium-name" id="host-podium-1-name"></p>
+                    <p class="podium-score" id="host-podium-1-score"></p>
+                  </div>
+                </div>
+                <div class="podium-slot podium-third">
+                  <div class="podium-card">
+                    <p class="podium-medal">3rd</p>
+                    <p class="podium-name" id="host-podium-3-name"></p>
+                    <p class="podium-score" id="host-podium-3-score"></p>
+                  </div>
+                </div>
+              </div>
+              <ol id="host-podium-rest-list" class="leaderboard-list"></ol>
+              <button type="button" id="host-view-analytics-button" class="analytics-link-button hidden">View Analytics</button>
+            </div>
+
+            <button type="button" id="host-end-game-button">End Game</button>
+          </div>
+        </section>
+      </div>
     </main>
   </div>
 
-  <div id="student-dashboard-view" class="hidden">
-    <header class="dashboard-header">
-      <h1 class="logo">Study Buddy</h1>
-      <div class="dashboard-header-right">
-        <span id="student-dashboard-username"></span>
-        <button type="button" id="student-logout-button">Log Out</button>
+  <!-- STUDENT DASHBOARD VIEW -->
+  <div id="student-dashboard-view" class="app-layout hidden">
+    <!-- LEFT SIDEBAR -->
+    <aside class="app-sidebar">
+      <div class="sidebar-header">
+        <h1 class="logo">Study Buddy</h1>
       </div>
-    </header>
 
-    <p class="message" id="student-dashboard-message" role="alert"></p>
 
-    <nav class="tabs dashboard-tabs" id="student-tabs">
-      <button type="button" class="tab active" data-target="panel-stu-classrooms">Classrooms</button>
-      <button type="button" class="tab" data-target="panel-stu-join">Join Classroom</button>
-      <button type="button" class="tab" data-target="panel-stu-study">Study</button>
-      <button type="button" class="tab" data-target="panel-stu-practice">Practice</button>
-      <button type="button" class="tab" data-target="panel-stu-public">Public Sets</button>
-      <button type="button" class="tab" data-target="panel-stu-favorites">Favorites</button>
-      <button type="button" class="tab" data-target="panel-stu-game">Live Game</button>
-    </nav>
+      <!-- VERTICAL NAV TABS -->
+      <nav class="sidebar-nav" id="student-tabs">
+        <button type="button" class="tab active" data-target="panel-stu-classrooms">Classrooms</button>
+        <button type="button" class="tab" data-target="panel-stu-join">Join Class</button>
+        <button type="button" class="tab" data-target="panel-stu-study">Study Cards</button>
+        <button type="button" class="tab" data-target="panel-stu-practice">Practice</button>
+        <button type="button" class="tab" data-target="panel-stu-public">Public Sets</button>
+        <button type="button" class="tab" data-target="panel-stu-favorites">Favorites</button>
+        <button type="button" class="tab" data-target="panel-stu-game">Live Game</button>
+      </nav>
 
-    <main class="dashboard-grid">
-      <section class="panel" id="panel-stu-classrooms">
-        <h2>Your Classrooms</h2>
-        <ul id="my-classroom-list" class="classroom-list"></ul>
-      </section>
-
-      <section class="panel hidden" id="panel-stu-join">
-        <h2>Join a Classroom</h2>
-        <form id="join-classroom-form" class="panel-form">
-          <label for="join-code">Classroom join code</label>
-          <input id="join-code" name="code" type="text" required />
-          <button type="submit">Join</button>
-        </form>
-      </section>
-
-      <section class="panel hidden" id="panel-stu-study">
-        <h2>Study Flashcards</h2>
-        <form id="study-select-form" class="panel-form">
-          <label for="study-classroom-select">Classroom</label>
-          <select id="study-classroom-select" required></select>
-          <button type="submit">Load Flashcards</button>
-        </form>
-
-        <div id="flashcard-viewer" class="flashcard-viewer hidden">
-          <p id="flashcard-set-title" class="flashcard-set-title"></p>
-          <button type="button" id="flashcard" class="flashcard">
-            <span id="flashcard-content"></span>
-          </button>
-          <p id="flashcard-counter" class="flashcard-counter"></p>
-          <div class="flashcard-controls">
-            <button type="button" id="flashcard-prev">Previous</button>
-            <button type="button" id="flashcard-next">Next</button>
-          </div>
+      <!-- SIDEBAR FOOTER -->
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <span id="student-dashboard-username" class="username-text"></span>
         </div>
-      </section>
+        <button type="button" id="student-logout-button" class="logout-action-btn">Log Out</button>
+      </div>
+    </aside>
 
-      <section class="panel hidden" id="panel-stu-practice">
-        <h2>Solo Practice</h2>
-        <form id="practice-select-form" class="panel-form">
-          <label for="practice-classroom-select">Classroom</label>
-          <select id="practice-classroom-select" required></select>
-          <button type="submit">Start Practice</button>
-        </form>
+    <!-- MAIN CONTENT AREA -->
+    <main class="app-main-content">
+      <header class="main-topbar">
+        <div class="topbar-title">Student Dashboard</div>
+      </header>
 
-        <div id="practice-quiz" class="practice-quiz hidden">
-          <div class="practice-status-line">
-            <span id="practice-progress-text"></span>
-            <span id="practice-score-text"></span>
-          </div>
-          <p class="question-term" id="practice-term"></p>
-          <div id="practice-choices" class="choice-grid"></div>
-        </div>
+      <p class="message" id="student-dashboard-message" role="alert"></p>
 
-        <div id="practice-summary" class="practice-summary hidden">
-          <h3>Practice Complete!</h3>
-          <p id="practice-summary-text"></p>
-          <button type="button" id="practice-restart-button">Practice Again</button>
-        </div>
-      </section>
-
-      <section class="panel hidden" id="panel-stu-public">
-        <h2>Public Study Sets</h2>
-        <ul id="public-set-list" class="classroom-list"></ul>
-      </section>
-
-      <section class="panel hidden" id="panel-stu-favorites">
-        <h2>Your Favorites</h2>
-        <ul id="favorite-set-list" class="classroom-list"></ul>
-      </section>
-
-      <section class="panel hidden" id="panel-stu-game">
-        <h2>Live Game</h2>
-        <form id="join-game-form" class="panel-form">
-          <label for="game-join-code">Game join code</label>
-          <input id="game-join-code" name="code" type="text" required />
-
-          <button type="submit">Join Game</button>
-        </form>
-
-        <div id="player-game-live" class="game-live hidden">
-          <p id="player-game-status" class="game-status"></p>
-
-          <div id="player-question-view" class="question-view hidden">
-            <p class="question-term" id="player-question-term"></p>
-            <div id="player-choices" class="choice-grid"></div>
-          </div>
-
-          <div id="player-points-view" class="points-view hidden">
-            <p class="points-value" id="player-points-value"></p>
-            <p class="points-reason" id="player-points-reason"></p>
-            <p class="points-total">Total score: <span id="player-points-total-value">0</span></p>
-          </div>
-
-          <div id="player-leaderboard-view" class="leaderboard-view hidden">
-            <h3>Leaderboard</h3>
-            <ol id="player-leaderboard-list" class="leaderboard-list"></ol>
-          </div>
-
-          <div id="player-podium-view" class="podium-view hidden">
-            <h3>🏆 Final Results</h3>
-            <div class="podium">
-              <div class="podium-slot podium-second">
-                <div class="podium-card">
-                  <p class="podium-medal">🥈</p>
-                  <p class="podium-name" id="player-podium-2-name"></p>
-                  <p class="podium-score" id="player-podium-2-score"></p>
-                </div>
-              </div>
-              <div class="podium-slot podium-first">
-                <div class="podium-card">
-                  <p class="podium-medal">🥇</p>
-                  <p class="podium-name" id="player-podium-1-name"></p>
-                  <p class="podium-score" id="player-podium-1-score"></p>
-                </div>
-              </div>
-              <div class="podium-slot podium-third">
-                <div class="podium-card">
-                  <p class="podium-medal">🥉</p>
-                  <p class="podium-name" id="player-podium-3-name"></p>
-                  <p class="podium-score" id="player-podium-3-score"></p>
-                </div>
-              </div>
+      <div class="dashboard-grid">
+        <!-- COMBINED CLASSROOMS & JOIN PANEL -->
+        <section class="panel" id="panel-stu-classrooms">
+          <div class="panel-grid-2col">
+            <div class="panel-col">
+              <h2>Your Classrooms</h2>
+              <ul id="my-classroom-list" class="classroom-list"></ul>
             </div>
-            <ol id="player-podium-rest-list" class="leaderboard-list"></ol>
+
+            <div class="panel-col">
+              <h2>Join Classroom</h2>
+              <form id="join-classroom-form" class="panel-form">
+                <label for="join-code">Join Code</label>
+                <input id="join-code" name="code" type="text" placeholder="Enter code" required />
+                <button type="submit">Join</button>
+              </form>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        <!-- JOIN CLASSROOM STANDALONE (FOR DIRECT NAVIGATION) -->
+        <section class="panel hidden" id="panel-stu-join">
+          <h2>Join Classroom</h2>
+          <div class="card-form-compact">
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Enter the code from your instructor to join a classroom.</p>
+            <button type="button" class="tab-redirect-btn" onclick="document.querySelector('#student-tabs [data-target=\'panel-stu-classrooms\']').click()">Open Classrooms Page</button>
+          </div>
+        </section>
+
+        <!-- STUDY FLASHCARDS PANEL -->
+        <section class="panel hidden" id="panel-stu-study">
+          <h2>Study Flashcards</h2>
+          <form id="study-select-form" class="panel-form card-form-compact">
+            <label for="study-classroom-select">Classroom</label>
+            <select id="study-classroom-select" required></select>
+            <button type="submit">Load Deck</button>
+          </form>
+
+          <div id="flashcard-viewer" class="flashcard-viewer hidden">
+            <p id="flashcard-set-title" class="flashcard-set-title"></p>
+            <button type="button" id="flashcard" class="flashcard">
+              <span id="flashcard-content"></span>
+            </button>
+            <p id="flashcard-counter" class="flashcard-counter"></p>
+            <div class="flashcard-controls">
+              <button type="button" id="flashcard-prev">Previous</button>
+              <button type="button" id="flashcard-next">Next</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- SOLO PRACTICE PANEL -->
+        <section class="panel hidden" id="panel-stu-practice">
+          <h2>Solo Practice Quiz</h2>
+          <form id="practice-select-form" class="panel-form card-form-compact">
+            <label for="practice-classroom-select">Classroom</label>
+            <select id="practice-classroom-select" required></select>
+            <button type="submit">Start Quiz</button>
+          </form>
+
+          <div id="practice-quiz" class="practice-quiz hidden">
+            <div class="practice-status-line">
+              <span id="practice-progress-text"></span>
+              <span id="practice-score-text"></span>
+            </div>
+            <p class="question-term" id="practice-term"></p>
+            <div id="practice-choices" class="choice-grid"></div>
+          </div>
+
+          <div id="practice-summary" class="practice-summary hidden">
+            <h3>Practice Complete</h3>
+            <p id="practice-summary-text"></p>
+            <button type="button" id="practice-restart-button">Practice Again</button>
+          </div>
+        </section>
+
+        <!-- PUBLIC STUDY SETS PANEL -->
+        <section class="panel hidden" id="panel-stu-public">
+          <h2>Public Sets</h2>
+          <ul id="public-set-list" class="classroom-list"></ul>
+        </section>
+
+        <!-- FAVORITES PANEL -->
+        <section class="panel hidden" id="panel-stu-favorites">
+          <h2>Favorites</h2>
+          <ul id="favorite-set-list" class="classroom-list"></ul>
+        </section>
+
+        <!-- LIVE GAME JOIN PANEL -->
+        <section class="panel hidden" id="panel-stu-game">
+          <h2>Live Game</h2>
+          <form id="join-game-form" class="panel-form card-form-compact">
+            <label for="game-join-code">Game Code</label>
+            <input id="game-join-code" name="code" type="text" placeholder="Enter code" required />
+            <button type="submit">Join Game</button>
+          </form>
+
+          <div id="player-game-live" class="game-live hidden">
+            <p id="player-game-status" class="game-status"></p>
+
+            <div id="player-question-view" class="question-view hidden">
+              <p class="question-term" id="player-question-term"></p>
+              <div id="player-choices" class="choice-grid"></div>
+            </div>
+
+            <div id="player-points-view" class="points-view hidden">
+              <p class="points-value" id="player-points-value"></p>
+              <p class="points-reason" id="player-points-reason"></p>
+              <p class="points-total">Total score: <span id="player-points-total-value">0</span></p>
+            </div>
+
+            <div id="player-leaderboard-view" class="leaderboard-view hidden">
+              <h3>Leaderboard</h3>
+              <ol id="player-leaderboard-list" class="leaderboard-list"></ol>
+            </div>
+
+            <div id="player-podium-view" class="podium-view hidden">
+              <h3>Final Results</h3>
+              <div class="podium">
+                <div class="podium-slot podium-second">
+                  <div class="podium-card">
+                    <p class="podium-medal">2nd</p>
+                    <p class="podium-name" id="player-podium-2-name"></p>
+                    <p class="podium-score" id="player-podium-2-score"></p>
+                  </div>
+                </div>
+                <div class="podium-slot podium-first">
+                  <div class="podium-card">
+                    <p class="podium-medal">1st</p>
+                    <p class="podium-name" id="player-podium-1-name"></p>
+                    <p class="podium-score" id="player-podium-1-score"></p>
+                  </div>
+                </div>
+                <div class="podium-slot podium-third">
+                  <div class="podium-card">
+                    <p class="podium-medal">3rd</p>
+                    <p class="podium-name" id="player-podium-3-name"></p>
+                    <p class="podium-score" id="player-podium-3-score"></p>
+                  </div>
+                </div>
+              </div>
+              <ol id="player-podium-rest-list" class="leaderboard-list"></ol>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
   </div>
 
+  <!-- ANALYTICS VIEW -->
   <div id="analytics-view" class="hidden">
-    <header class="dashboard-header">
+    <header class="main-topbar">
       <h1 class="logo">Study Buddy</h1>
       <div class="dashboard-header-right">
-        <button type="button" id="analytics-back-button">&larr; Back to Dashboard</button>
+        <button type="button" id="analytics-back-button">Back to Dashboard</button>
       </div>
     </header>
 
     <main class="analytics-grid">
-      <section class="analytics-panel">
+      <section class="panel">
         <h2 id="analytics-set-title">Struggle Analytics</h2>
         <p class="message" id="analytics-message" role="alert"></p>
 
         <div class="analytics-pickers">
           <div class="analytics-picker">
-            <h3>Game</h3>
+            <h3>Select Game Session</h3>
             <ul id="analytics-game-list" class="classroom-list"></ul>
           </div>
 
           <div class="analytics-picker">
-            <h3>Student</h3>
-            <label for="analytics-student-select">Show</label>
+            <h3>Filter by Student</h3>
             <select id="analytics-student-select"></select>
           </div>
         </div>
@@ -394,7 +471,7 @@
           <canvas id="analytics-heatmap-chart"></canvas>
         </div>
 
-        <h3>Terms</h3>
+        <h3>Term Accuracy Breakdown</h3>
         <ul id="analytics-heatmap-list" class="classroom-list heatmap-list"></ul>
       </section>
     </main>

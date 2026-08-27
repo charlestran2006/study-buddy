@@ -13,3 +13,5 @@ export function initDashboardTabs(navId) {
 
 initDashboardTabs("professor-tabs");
 initDashboardTabs("student-tabs");
+
+
