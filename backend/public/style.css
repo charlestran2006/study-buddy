@@ -498,6 +498,46 @@ body {
   transform: translateY(-2px);
 }
 
+.practice-quiz {
+  margin-top: 20px;
+}
+
+.practice-status-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.practice-summary {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.practice-summary h3 {
+  margin: 0 0 8px;
+  color: var(--kahoot-purple);
+}
+
+#practice-restart-button {
+  margin-top: 12px;
+  padding: 10px 20px;
+  border: none;
+  border-bottom: 4px solid #0d4b91;
+  border-radius: 10px;
+  background: var(--kahoot-blue);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+#practice-restart-button:hover {
+  transform: translateY(-2px);
+}
+
 .flashcard-viewer {
   margin-top: 20px;
   display: flex;

@@ -113,6 +113,33 @@ router.get("/classrooms/:id", requireAuth, requireProfessor, (req, res) => {
   );
 });
 
+router.put("/classrooms/:id", requireAuth, requireProfessor, async (req, res) => {
+  let classroomId = req.params.id;
+  let name = req.body.name;
+
+  if (!name) {
+    res.status(400).json({ error: "missing fields" });
+    return;
+  }
+
+  try {
+    let result = await pool.query(
+      "UPDATE classrooms SET name = $1 WHERE id = $2 AND professor_id = $3 RETURNING id, name, join_code, created_at",
+      [name, classroomId, req.session.userId]
+    );
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: "classroom not found" });
+      return;
+    }
+
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "something went wrong" });
+  }
+});
+
 router.delete("/classrooms/:id", requireAuth, requireProfessor, async (req, res) => {
   let classroomId = req.params.id;
 

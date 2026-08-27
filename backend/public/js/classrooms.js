@@ -80,10 +80,57 @@ function renderClassrooms(classrooms) {
         join code
       </div>
       <button type="button" class="roster-toggle-button">View Roster</button>
+      <button type="button" class="roster-toggle-button classroom-rename-button">Rename</button>
       <button type="button" class="classroom-delete-button">Delete Classroom</button>
+      <form class="panel-form classroom-rename-form hidden">
+        <input type="text" class="classroom-rename-input" required />
+        <button type="submit">Save</button>
+      </form>
       <ul class="roster-list hidden"></ul>
     `;
     item.querySelector(".classroom-meta").appendChild(joinCodeSpan);
+
+    let nameDiv = item.querySelector(".classroom-name");
+    let renameButton = item.querySelector(".classroom-rename-button");
+    let renameForm = item.querySelector(".classroom-rename-form");
+    let renameInput = item.querySelector(".classroom-rename-input");
+
+    renameButton.addEventListener("click", () => {
+      let isHidden = renameForm.classList.contains("hidden");
+
+      if (isHidden) {
+        renameInput.value = classroom.name;
+        renameForm.classList.remove("hidden");
+        renameButton.textContent = "Cancel";
+      } else {
+        renameForm.classList.add("hidden");
+        renameButton.textContent = "Rename";
+      }
+    });
+
+    renameForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      let button = renameForm.querySelector("button[type='submit']");
+      button.disabled = true;
+
+      try {
+        let updated = await apiRequest(`/classrooms/${classroom.id}`, {
+          method: "PUT",
+          body: JSON.stringify({ name: renameInput.value }),
+        });
+        classroom.name = updated.name;
+        nameDiv.textContent = updated.name;
+        option.textContent = updated.name;
+        hostOption.textContent = updated.name;
+        renameForm.classList.add("hidden");
+        renameButton.textContent = "Rename";
+        setDashboardMessage("Classroom renamed.", true);
+      } catch (err) {
+        setDashboardMessage(err.message);
+      } finally {
+        button.disabled = false;
+      }
+    });
 
     let countText = item.querySelector(".student-count-text");
     function updateCountText() {

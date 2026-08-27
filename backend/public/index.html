@@ -228,6 +228,7 @@
       <button type="button" class="tab active" data-target="panel-stu-classrooms">Classrooms</button>
       <button type="button" class="tab" data-target="panel-stu-join">Join Classroom</button>
       <button type="button" class="tab" data-target="panel-stu-study">Study</button>
+      <button type="button" class="tab" data-target="panel-stu-practice">Practice</button>
       <button type="button" class="tab" data-target="panel-stu-public">Public Sets</button>
       <button type="button" class="tab" data-target="panel-stu-favorites">Favorites</button>
       <button type="button" class="tab" data-target="panel-stu-game">Live Game</button>
@@ -266,6 +267,30 @@
             <button type="button" id="flashcard-prev">Previous</button>
             <button type="button" id="flashcard-next">Next</button>
           </div>
+        </div>
+      </section>
+
+      <section class="panel hidden" id="panel-stu-practice">
+        <h2>Solo Practice</h2>
+        <form id="practice-select-form" class="panel-form">
+          <label for="practice-classroom-select">Classroom</label>
+          <select id="practice-classroom-select" required></select>
+          <button type="submit">Start Practice</button>
+        </form>
+
+        <div id="practice-quiz" class="practice-quiz hidden">
+          <div class="practice-status-line">
+            <span id="practice-progress-text"></span>
+            <span id="practice-score-text"></span>
+          </div>
+          <p class="question-term" id="practice-term"></p>
+          <div id="practice-choices" class="choice-grid"></div>
+        </div>
+
+        <div id="practice-summary" class="practice-summary hidden">
+          <h3>Practice Complete!</h3>
+          <p id="practice-summary-text"></p>
+          <button type="button" id="practice-restart-button">Practice Again</button>
         </div>
       </section>
 
