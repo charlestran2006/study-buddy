@@ -301,21 +301,62 @@ body {
    ========================================================================== */
 
 #auth-view {
+  position: relative;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: var(--bg-page);
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 900px 600px at 20% 10%, rgba(147, 91, 245, 0.35), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 85% 90%, rgba(99, 52, 199, 0.3), transparent 60%),
+    linear-gradient(160deg, #3c1670 0%, #2c0f57 45%, #1a0938 100%);
+}
+
+#auth-view::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  filter: blur(1px);
+  background-repeat: no-repeat;
+  background-image:
+    linear-gradient(125deg, transparent 47%, rgba(255, 255, 255, 0.16) 50%, transparent 53%),
+    linear-gradient(115deg, transparent 46%, rgba(216, 190, 255, 0.14) 50%, transparent 54%),
+    linear-gradient(132deg, transparent 47%, rgba(255, 255, 255, 0.1) 50%, transparent 53%),
+    linear-gradient(108deg, transparent 46%, rgba(216, 190, 255, 0.12) 50%, transparent 54%),
+    linear-gradient(120deg, transparent 47%, rgba(255, 255, 255, 0.13) 50%, transparent 53%),
+    linear-gradient(140deg, transparent 46%, rgba(216, 190, 255, 0.1) 50%, transparent 54%),
+    linear-gradient(112deg, transparent 47%, rgba(255, 255, 255, 0.11) 50%, transparent 53%);
+  background-size:
+    40% 220%,
+    28% 180%,
+    22% 260%,
+    32% 200%,
+    18% 150%,
+    26% 190%,
+    20% 240%;
+  background-position:
+    2% -40%,
+    68% -30%,
+    88% 30%,
+    12% 45%,
+    52% 70%,
+    92% -15%,
+    38% 82%;
 }
 
 .auth-card {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 400px;
   background: #ffffff;
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 25px 70px -15px rgba(10, 3, 30, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);
   padding: 32px 28px;
 }
 
