@@ -61,7 +61,13 @@ router.post("/sets", requireAuth, requireProfessor, (req, res) => {
 
 router.get("/sets", requireAuth, requireProfessor, (req, res) => {
   pool.query(
-    "SELECT id, title, description, is_public, created_at FROM sets WHERE user_id = $1 ORDER BY created_at DESC",
+    `SELECT s.id, s.title, s.description, s.is_public, s.created_at,
+            COUNT(f.id) > 0 AS is_favorited
+     FROM sets s
+     LEFT JOIN favorites f ON f.set_id = s.id AND f.user_id = $1
+     WHERE s.user_id = $1
+     GROUP BY s.id
+     ORDER BY s.created_at DESC`,
     [req.session.userId],
     (err, result) => {
       if (err) {
@@ -332,6 +338,59 @@ router.get("/public-sets/:id", requireAuth, async (req, res) => {
     );
 
     res.status(200).json({ ...setResult.rows[0], terms: termsResult.rows });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "something went wrong" });
+  }
+});
+
+router.post("/public-sets/:id/copy", requireAuth, requireProfessor, async (req, res) => {
+  let setId = req.params.id;
+
+  try {
+    let setResult = await pool.query(
+      "SELECT title, description FROM sets WHERE id = $1 AND is_public = TRUE",
+      [setId]
+    );
+
+    if (setResult.rows.length === 0) {
+      res.status(404).json({ error: "study set not found" });
+      return;
+    }
+
+    let source = setResult.rows[0];
+
+    let termsResult = await pool.query(
+      "SELECT term, definition, position FROM terms WHERE set_id = $1 ORDER BY position ASC",
+      [setId]
+    );
+
+    if (termsResult.rows.length === 0) {
+      res.status(400).json({ error: "study set has no terms to copy" });
+      return;
+    }
+
+    let newSetResult = await pool.query(
+      "INSERT INTO sets (user_id, title, description, is_public) VALUES ($1, $2, $3, FALSE) RETURNING id, title, description, is_public, created_at",
+      [req.session.userId, source.title, source.description]
+    );
+
+    let newSet = newSetResult.rows[0];
+    let values = [];
+    let placeholders = [];
+
+    termsResult.rows.forEach((t, i) => {
+      let base = i * 4;
+      placeholders.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4})`);
+      values.push(newSet.id, t.term, t.definition, i);
+    });
+
+    await pool.query(
+      `INSERT INTO terms (set_id, term, definition, position) VALUES ${placeholders.join(", ")}`,
+      values
+    );
+
+    res.status(200).json(newSet);
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "something went wrong" });

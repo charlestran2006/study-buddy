@@ -85,6 +85,8 @@
       <button type="button" class="tab active" data-target="panel-prof-classrooms">Classrooms</button>
       <button type="button" class="tab" data-target="panel-prof-sets">Study Sets</button>
       <button type="button" class="tab" data-target="panel-prof-assign">Assign</button>
+      <button type="button" class="tab" data-target="panel-prof-public">Public Sets</button>
+      <button type="button" class="tab" data-target="panel-prof-favorites">Favorites</button>
       <button type="button" class="tab" data-target="panel-prof-game">Live Game</button>
     </nav>
 
@@ -135,6 +137,16 @@
 
           <button type="submit">Assign</button>
         </form>
+      </section>
+
+      <section class="panel hidden" id="panel-prof-public">
+        <h2>Public Study Sets</h2>
+        <ul id="prof-public-set-list" class="classroom-list"></ul>
+      </section>
+
+      <section class="panel hidden" id="panel-prof-favorites">
+        <h2>Your Favorites</h2>
+        <ul id="prof-favorite-set-list" class="classroom-list"></ul>
       </section>
 
       <section class="panel hidden" id="panel-prof-game">

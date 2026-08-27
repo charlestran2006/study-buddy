@@ -34,7 +34,7 @@ function renderPublicSets(sets) {
         ${set.term_count} term${set.term_count === 1 ? "" : "s"}
       </div>
       <button type="button" class="roster-toggle-button">Study</button>
-      <button type="button" class="favorite-toggle-button">${set.is_favorited ? "★ Favorited" : "☆ Favorite"}</button>
+      <button type="button" class="favorite-toggle-button" title="${set.is_favorited ? "Favorited" : "Favorite"}">${set.is_favorited ? "★" : "☆"}</button>
     `;
 
     item.querySelector(".roster-toggle-button").addEventListener("click", async (event) => {
@@ -64,7 +64,8 @@ function renderPublicSets(sets) {
           await apiRequest("/favorites", { method: "POST", body: JSON.stringify({ set_id: set.id }) });
           set.is_favorited = true;
         }
-        favoriteButton.textContent = set.is_favorited ? "★ Favorited" : "☆ Favorite";
+        favoriteButton.textContent = set.is_favorited ? "★" : "☆";
+        favoriteButton.title = set.is_favorited ? "Favorited" : "Favorite";
       } catch (err) {
         setStudentDashboardMessage(err.message);
       } finally {

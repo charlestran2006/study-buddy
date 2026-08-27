@@ -1,17 +1,17 @@
 import { apiRequest } from "./api.js";
-import { setStudentDashboardMessage, escapeHtml } from "./dom.js";
-import { showFlashcards } from "./flashcards.js";
+import { setDashboardMessage, escapeHtml } from "./dom.js";
+import { loadSets } from "./sets.js";
 
-let favoriteSetList = document.getElementById("favorite-set-list");
+let favoriteSetList = document.getElementById("prof-favorite-set-list");
 
-document.querySelector('#student-tabs [data-target="panel-stu-favorites"]').addEventListener("click", loadFavorites);
+document.querySelector('#professor-tabs [data-target="panel-prof-favorites"]').addEventListener("click", loadFavorites);
 
 async function loadFavorites() {
   try {
     let sets = await apiRequest("/favorites");
     renderFavorites(sets);
   } catch (err) {
-    setStudentDashboardMessage(err.message);
+    setDashboardMessage(err.message);
   }
 }
 
@@ -32,24 +32,9 @@ function renderFavorites(sets) {
         By ${escapeHtml(set.professor_username)} &middot;
         ${set.term_count} term${set.term_count === 1 ? "" : "s"}
       </div>
-      <button type="button" class="roster-toggle-button">Study</button>
       <button type="button" class="favorite-toggle-button" title="Favorited">★</button>
+      <button type="button" class="add-to-sets-button">+ Add to My Sets</button>
     `;
-
-    item.querySelector(".roster-toggle-button").addEventListener("click", async (event) => {
-      let button = event.target;
-      button.disabled = true;
-
-      try {
-        let details = await apiRequest(`/public-sets/${set.id}`);
-        showFlashcards(details.title, details.terms);
-        document.querySelector('#student-tabs [data-target="panel-stu-study"]').click();
-      } catch (err) {
-        setStudentDashboardMessage(err.message);
-      } finally {
-        button.disabled = false;
-      }
-    });
 
     item.querySelector(".favorite-toggle-button").addEventListener("click", async (event) => {
       let button = event.target;
@@ -62,7 +47,22 @@ function renderFavorites(sets) {
           renderFavorites([]);
         }
       } catch (err) {
-        setStudentDashboardMessage(err.message);
+        setDashboardMessage(err.message);
+        button.disabled = false;
+      }
+    });
+
+    item.querySelector(".add-to-sets-button").addEventListener("click", async (event) => {
+      let button = event.target;
+      button.disabled = true;
+
+      try {
+        await apiRequest(`/public-sets/${set.id}/copy`, { method: "POST" });
+        button.textContent = "Added ✓";
+        setDashboardMessage(`"${set.title}" added to your study sets.`, true);
+        loadSets();
+      } catch (err) {
+        setDashboardMessage(err.message);
         button.disabled = false;
       }
     });

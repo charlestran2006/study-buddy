@@ -339,6 +339,27 @@ body {
   cursor: not-allowed;
 }
 
+.add-to-sets-button {
+  margin-top: 8px;
+  margin-left: 8px;
+  padding: 4px 10px;
+  border: 1px solid #a7e0b0;
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--kahoot-green);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.add-to-sets-button:hover {
+  background: #eefbf0;
+}
+
+.add-to-sets-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .roster-list {
   list-style: none;
   margin: 10px 0 0;
@@ -712,6 +733,16 @@ body {
 .set-edit-container {
   flex-basis: 100%;
   width: 100%;
+}
+
+.set-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.set-actions button {
+  margin: 0;
 }
 
 .set-item .set-name {

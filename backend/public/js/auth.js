@@ -37,12 +37,18 @@ export function registerStudentDashboardLoader(fn) {
   studentDashboardLoaders.push(fn);
 }
 
+let professorDashboardLoaders = [];
+export function registerProfessorDashboardLoader(fn) {
+  professorDashboardLoaders.push(fn);
+}
+
 export function showProfessorDashboard(user) {
   authView.classList.add("hidden");
   dashboardView.classList.remove("hidden");
   document.getElementById("dashboard-username").textContent = `${user.username} (${user.role})`;
   loadClassrooms();
   loadSets();
+  professorDashboardLoaders.forEach((fn) => fn());
 }
 
 export function showStudentDashboard(user) {

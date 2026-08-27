@@ -13,7 +13,10 @@ router.post("/favorites", requireAuth, async (req, res) => {
   }
 
   try {
-    let setResult = await pool.query("SELECT id FROM sets WHERE id = $1 AND is_public = TRUE", [setId]);
+    let setResult = await pool.query(
+      "SELECT id FROM sets WHERE id = $1 AND (is_public = TRUE OR user_id = $2)",
+      [setId, req.session.userId]
+    );
 
     if (setResult.rows.length === 0) {
       res.status(404).json({ error: "study set not found" });
@@ -63,7 +66,7 @@ router.get("/favorites", requireAuth, async (req, res) => {
        JOIN sets s ON s.id = f.set_id
        JOIN users u ON u.id = s.user_id
        LEFT JOIN terms t ON t.set_id = s.id
-       WHERE f.user_id = $1 AND s.is_public = TRUE
+       WHERE f.user_id = $1 AND (s.is_public = TRUE OR s.user_id = $1)
        GROUP BY s.id, u.username
        ORDER BY favorited_at DESC`,
       [req.session.userId]

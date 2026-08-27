@@ -85,18 +85,48 @@ function renderSets(sets) {
       </div>
     `;
 
+    let actions = document.createElement("div");
+    actions.className = "set-actions";
+    item.appendChild(actions);
+
     let analyticsButton = document.createElement("button");
     analyticsButton.type = "button";
     analyticsButton.className = "analytics-link-button";
     analyticsButton.textContent = "Struggle Analytics";
     analyticsButton.addEventListener("click", () => openAnalytics(set.id, set.title));
-    item.appendChild(analyticsButton);
+    actions.appendChild(analyticsButton);
+
+    let favoriteButton = document.createElement("button");
+    favoriteButton.type = "button";
+    favoriteButton.className = "favorite-toggle-button";
+    favoriteButton.textContent = set.is_favorited ? "★" : "☆";
+    favoriteButton.title = set.is_favorited ? "Favorited" : "Favorite";
+    favoriteButton.addEventListener("click", async () => {
+      favoriteButton.disabled = true;
+
+      try {
+        if (set.is_favorited) {
+          await apiRequest(`/favorites/${set.id}`, { method: "DELETE" });
+          set.is_favorited = false;
+        } else {
+          await apiRequest("/favorites", { method: "POST", body: JSON.stringify({ set_id: set.id }) });
+          set.is_favorited = true;
+        }
+        favoriteButton.textContent = set.is_favorited ? "★" : "☆";
+        favoriteButton.title = set.is_favorited ? "Favorited" : "Favorite";
+      } catch (err) {
+        setDashboardMessage(err.message);
+      } finally {
+        favoriteButton.disabled = false;
+      }
+    });
+    actions.appendChild(favoriteButton);
 
     let editButton = document.createElement("button");
     editButton.type = "button";
     editButton.className = "roster-toggle-button";
     editButton.textContent = "Edit";
-    item.appendChild(editButton);
+    actions.appendChild(editButton);
 
     let editContainer = document.createElement("div");
     editContainer.className = "set-edit-container hidden";
