@@ -80,6 +80,7 @@ function renderClassrooms(classrooms) {
         join code
       </div>
       <button type="button" class="roster-toggle-button">View Roster</button>
+      <button type="button" class="classroom-delete-button">Delete Classroom</button>
       <ul class="roster-list hidden"></ul>
     `;
     item.querySelector(".classroom-meta").appendChild(joinCodeSpan);
@@ -127,6 +128,24 @@ function renderClassrooms(classrooms) {
 
       rosterList.classList.remove("hidden");
       rosterButton.textContent = "Hide Roster";
+    });
+
+    item.querySelector(".classroom-delete-button").addEventListener("click", async () => {
+      let confirmed = window.confirm(
+        `Delete "${classroom.name}"? This removes all students, assignments, and game history for this classroom. This cannot be undone.`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        await apiRequest(`/classrooms/${classroom.id}`, { method: "DELETE" });
+        setDashboardMessage("Classroom deleted.", true);
+        loadClassrooms();
+      } catch (err) {
+        setDashboardMessage(err.message);
+      }
     });
 
     classroomList.appendChild(item);

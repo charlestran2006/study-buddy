@@ -414,6 +414,22 @@ body {
   cursor: not-allowed;
 }
 
+.classroom-delete-button {
+  margin-top: 8px;
+  margin-left: 8px;
+  padding: 4px 10px;
+  border: 1px solid #f5b5b5;
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--kahoot-red);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.classroom-delete-button:hover {
+  background: #fdeaea;
+}
+
 .empty-state {
   padding: 28px 16px;
   text-align: center;

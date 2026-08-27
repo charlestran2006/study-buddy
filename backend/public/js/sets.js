@@ -128,6 +128,29 @@ function renderSets(sets) {
     editButton.textContent = "Edit";
     actions.appendChild(editButton);
 
+    let deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "classroom-delete-button";
+    deleteButton.textContent = "Delete";
+    deleteButton.addEventListener("click", async () => {
+      let confirmed = window.confirm(
+        `Delete "${set.title}"? This removes the set, its terms, and any assignments or game history tied to it. This cannot be undone.`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        await apiRequest(`/sets/${set.id}`, { method: "DELETE" });
+        setDashboardMessage("Study set deleted.", true);
+        loadSets();
+      } catch (err) {
+        setDashboardMessage(err.message);
+      }
+    });
+    actions.appendChild(deleteButton);
+
     let editContainer = document.createElement("div");
     editContainer.className = "set-edit-container hidden";
     item.appendChild(editContainer);

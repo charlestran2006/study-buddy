@@ -113,6 +113,52 @@ router.get("/classrooms/:id", requireAuth, requireProfessor, (req, res) => {
   );
 });
 
+router.delete("/classrooms/:id", requireAuth, requireProfessor, async (req, res) => {
+  let classroomId = req.params.id;
+
+  try {
+    let owned = await pool.query(
+      "SELECT id FROM classrooms WHERE id = $1 AND professor_id = $2",
+      [classroomId, req.session.userId]
+    );
+
+    if (owned.rows.length === 0) {
+      res.status(404).json({ error: "classroom not found" });
+      return;
+    }
+
+    let client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        `DELETE FROM game_answers WHERE game_player_id IN (
+           SELECT gp.id FROM game_players gp JOIN games g ON g.id = gp.game_id WHERE g.classroom_id = $1
+         )`,
+        [classroomId]
+      );
+      await client.query(
+        "DELETE FROM game_players WHERE game_id IN (SELECT id FROM games WHERE classroom_id = $1)",
+        [classroomId]
+      );
+      await client.query("DELETE FROM games WHERE classroom_id = $1", [classroomId]);
+      await client.query("DELETE FROM assignments WHERE classroom_id = $1", [classroomId]);
+      await client.query("DELETE FROM classroom_students WHERE classroom_id = $1", [classroomId]);
+      await client.query("DELETE FROM classrooms WHERE id = $1", [classroomId]);
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "something went wrong" });
+  }
+});
+
 router.delete("/classrooms/:id/students/:studentId", requireAuth, requireProfessor, (req, res) => {
   let classroomId = req.params.id;
   let studentId = req.params.studentId;

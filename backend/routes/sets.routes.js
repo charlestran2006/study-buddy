@@ -186,6 +186,57 @@ router.put("/sets/:id", requireAuth, requireProfessor, async (req, res) => {
   }
 });
 
+router.delete("/sets/:id", requireAuth, requireProfessor, async (req, res) => {
+  let setId = req.params.id;
+
+  try {
+    let owned = await pool.query(
+      "SELECT id FROM sets WHERE id = $1 AND user_id = $2",
+      [setId, req.session.userId]
+    );
+
+    if (owned.rows.length === 0) {
+      res.status(404).json({ error: "study set not found" });
+      return;
+    }
+
+    let client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        `DELETE FROM game_answers WHERE game_player_id IN (
+           SELECT gp.id FROM game_players gp JOIN games g ON g.id = gp.game_id WHERE g.set_id = $1
+         )`,
+        [setId]
+      );
+      await client.query(
+        "DELETE FROM game_players WHERE game_id IN (SELECT id FROM games WHERE set_id = $1)",
+        [setId]
+      );
+      await client.query("DELETE FROM games WHERE set_id = $1", [setId]);
+      await client.query("DELETE FROM assignments WHERE set_id = $1", [setId]);
+      await client.query("DELETE FROM favorites WHERE set_id = $1", [setId]);
+      await client.query(
+        "DELETE FROM progress WHERE term_id IN (SELECT id FROM terms WHERE set_id = $1)",
+        [setId]
+      );
+      await client.query("DELETE FROM terms WHERE set_id = $1", [setId]);
+      await client.query("DELETE FROM sets WHERE id = $1", [setId]);
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "something went wrong" });
+  }
+});
+
 router.get("/sets/:id/games", requireAuth, requireProfessor, async (req, res) => {
   let setId = req.params.id;
 
