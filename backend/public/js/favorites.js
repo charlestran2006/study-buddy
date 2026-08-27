@@ -1,6 +1,6 @@
 import { apiRequest } from "./api.js";
 import { setStudentDashboardMessage, escapeHtml } from "./dom.js";
-import { showFlashcards } from "./flashcards.js";
+import { showFlashcards, loadAllStudentSets } from "./flashcards.js";
 import { startPracticeForSet } from "./practice.js";
 
 let favoriteSetList = document.getElementById("favorite-set-list");
@@ -33,9 +33,11 @@ function renderFavorites(sets) {
         By ${escapeHtml(set.professor_username)} &middot;
         ${set.term_count} term${set.term_count === 1 ? "" : "s"}
       </div>
-      <button type="button" class="roster-toggle-button study-btn">Study</button>
-      <button type="button" class="roster-toggle-button practice-btn">Practice</button>
-      <button type="button" class="favorite-toggle-button" title="Favorited">★</button>
+      <div class="set-actions">
+        <button type="button" class="roster-toggle-button study-btn">Study</button>
+        <button type="button" class="add-to-sets-button">+ Add to My Sets</button>
+        <button type="button" class="favorite-toggle-button" title="Favorited">★</button>
+      </div>
     `;
 
     item.querySelector(".study-btn").addEventListener("click", async (event) => {
@@ -53,16 +55,18 @@ function renderFavorites(sets) {
       }
     });
 
-    item.querySelector(".practice-btn").addEventListener("click", async (event) => {
-      let button = event.target;
-      button.disabled = true;
+    let addButton = item.querySelector(".add-to-sets-button");
+    addButton.addEventListener("click", async () => {
+      addButton.disabled = true;
 
       try {
-        await startPracticeForSet(set.id);
+        await apiRequest(`/public-sets/${set.id}/copy`, { method: "POST" });
+        addButton.textContent = "Added ✓";
+        setStudentDashboardMessage(`"${set.title}" added to your study sets.`, true);
+        loadAllStudentSets();
       } catch (err) {
         setStudentDashboardMessage(err.message);
-      } finally {
-        button.disabled = false;
+        addButton.disabled = false;
       }
     });
 
@@ -73,6 +77,7 @@ function renderFavorites(sets) {
       try {
         await apiRequest(`/favorites/${set.id}`, { method: "DELETE" });
         item.remove();
+        loadAllStudentSets();
         if (favoriteSetList.children.length === 0) {
           renderFavorites([]);
         }
@@ -85,4 +90,5 @@ function renderFavorites(sets) {
     favoriteSetList.appendChild(item);
   });
 }
+
 

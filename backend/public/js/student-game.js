@@ -29,43 +29,13 @@ function renderMyClassrooms(classrooms) {
 
   classrooms.forEach((classroom) => {
     let item = document.createElement("li");
-    item.className = "classroom-item";
+    item.className = "classroom-item set-item";
     item.innerHTML = `
-      <div class="classroom-name">${escapeHtml(classroom.name)}</div>
-      <div class="classroom-meta">Taught by ${escapeHtml(classroom.professor_username)}</div>
-      <button type="button" class="roster-toggle-button study-btn">Study Assignment</button>
-      <button type="button" class="roster-toggle-button practice-btn">Practice Assignment</button>
+      <div class="set-info" style="flex: 1; min-width: 200px;">
+        <div class="classroom-name">${escapeHtml(classroom.name)}</div>
+        <div class="classroom-meta">Taught by ${escapeHtml(classroom.professor_username)}</div>
+      </div>
     `;
-
-    item.querySelector(".study-btn").addEventListener("click", async (event) => {
-      let button = event.target;
-      button.disabled = true;
-
-      try {
-        let studySet = await apiRequest(`/api/classrooms/${classroom.id}/assignment`);
-        showFlashcards(studySet.title, studySet.terms);
-        document.querySelector('#student-tabs [data-target="panel-stu-study"]')?.click();
-      } catch (err) {
-        setStudentDashboardMessage(err.message);
-      } finally {
-        button.disabled = false;
-      }
-    });
-
-    item.querySelector(".practice-btn").addEventListener("click", async (event) => {
-      let button = event.target;
-      button.disabled = true;
-
-      try {
-        let studySet = await apiRequest(`/api/classrooms/${classroom.id}/assignment`);
-        startPracticeWithTerms(studySet.terms);
-        document.querySelector('#student-tabs [data-target="panel-stu-practice"]')?.click();
-      } catch (err) {
-        setStudentDashboardMessage(err.message);
-      } finally {
-        button.disabled = false;
-      }
-    });
 
     myClassroomList.appendChild(item);
   });

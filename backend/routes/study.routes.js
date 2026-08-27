@@ -12,16 +12,18 @@ router.get('/my-study-sets', requireAuth, async (req, res) => {
     const userId = req.session.userId;
 
     const query = `
-        SELECT DISTINCT s.id, s.title, s.description, u.username AS author,
-               COUNT(DISTINCT t.id)::int AS term_count,
+        SELECT s.id, s.title, s.description, u.username AS author,
+               COUNT(t.id)::int AS term_count,
+               (s.user_id = $1) AS is_owner,
+               EXISTS (SELECT 1 FROM favorites f WHERE f.set_id = s.id AND f.user_id = $1) AS is_favorited,
                CASE 
+                   WHEN s.user_id = $1 THEN 'My Saved Sets'
                    WHEN EXISTS (
                        SELECT 1 FROM assignments a 
                        JOIN classroom_students cs ON cs.classroom_id = a.classroom_id 
                        WHERE a.set_id = s.id AND cs.student_id = $1
                    ) THEN 'Classroom Assignment'
                    WHEN EXISTS (SELECT 1 FROM favorites f WHERE f.set_id = s.id AND f.user_id = $1) THEN 'Favorite'
-                   WHEN s.user_id = $1 THEN 'My Set'
                    ELSE 'Public Set'
                END AS source_type,
                (
@@ -35,19 +37,18 @@ router.get('/my-study-sets', requireAuth, async (req, res) => {
         JOIN users u ON u.id = s.user_id
         LEFT JOIN terms t ON t.set_id = s.id
         WHERE s.user_id = $1
-           OR s.is_public = TRUE
            OR EXISTS (SELECT 1 FROM favorites f WHERE f.set_id = s.id AND f.user_id = $1)
            OR EXISTS (
                SELECT 1 FROM assignments a
                JOIN classroom_students cs ON cs.classroom_id = a.classroom_id
                WHERE a.set_id = s.id AND cs.student_id = $1
            )
-        GROUP BY s.id, u.username
+        GROUP BY s.id, s.title, s.description, u.username, s.user_id
         ORDER BY 
             CASE 
-                WHEN EXISTS (SELECT 1 FROM assignments a JOIN classroom_students cs ON cs.classroom_id = a.classroom_id WHERE a.set_id = s.id AND cs.student_id = $1) THEN 1
-                WHEN EXISTS (SELECT 1 FROM favorites f WHERE f.set_id = s.id AND f.user_id = $1) THEN 2
-                WHEN s.user_id = $1 THEN 3
+                WHEN s.user_id = $1 THEN 1
+                WHEN EXISTS (SELECT 1 FROM assignments a JOIN classroom_students cs ON cs.classroom_id = a.classroom_id WHERE a.set_id = s.id AND cs.student_id = $1) THEN 2
+                WHEN EXISTS (SELECT 1 FROM favorites f WHERE f.set_id = s.id AND f.user_id = $1) THEN 3
                 ELSE 4
             END,
             s.title ASC;

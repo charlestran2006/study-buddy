@@ -267,11 +267,9 @@
       <!-- VERTICAL NAV TABS -->
       <nav class="sidebar-nav" id="student-tabs">
         <button type="button" class="tab active" data-target="panel-stu-classrooms">Classrooms</button>
-        <button type="button" class="tab" data-target="panel-stu-join">Join Class</button>
         <button type="button" class="tab" data-target="panel-stu-study">Study Cards</button>
         <button type="button" class="tab" data-target="panel-stu-practice">Practice</button>
         <button type="button" class="tab" data-target="panel-stu-public">Public Sets</button>
-        <button type="button" class="tab" data-target="panel-stu-favorites">Favorites</button>
         <button type="button" class="tab" data-target="panel-stu-game">Live Game</button>
       </nav>
 
@@ -312,26 +310,18 @@
           </div>
         </section>
 
-        <!-- JOIN CLASSROOM STANDALONE (FOR DIRECT NAVIGATION) -->
-        <section class="panel hidden" id="panel-stu-join">
-          <h2>Join Classroom</h2>
-          <div class="card-form-compact">
-            <p style="color: var(--text-muted); font-size: 0.9rem;">Enter the code from your instructor to join a classroom.</p>
-            <button type="button" class="tab-redirect-btn" onclick="document.querySelector('#student-tabs [data-target=\'panel-stu-classrooms\']').click()">Open Classrooms Page</button>
-          </div>
-        </section>
-
-        <!-- STUDY FLASHCARDS PANEL -->
+        <!-- MY STUDY SETS & FLASHCARDS PANEL -->
         <section class="panel hidden" id="panel-stu-study">
-          <h2>Study Flashcards</h2>
-          <form id="study-select-form" class="panel-form card-form-compact">
-            <label for="study-classroom-select">Select Study Set</label>
-            <select id="study-classroom-select" required></select>
-            <button type="submit">Study Flashcards</button>
-          </form>
+          <h2>My Study Sets</h2>
+          <p style="color: var(--text-muted); font-size: 0.875rem; margin: -8px 0 16px;">
+            All card sets in your collection, including enrolled classroom assignments, personal sets, and saved favorites.
+          </p>
 
           <div id="flashcard-viewer" class="flashcard-viewer hidden">
-            <p id="flashcard-set-title" class="flashcard-set-title"></p>
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 500px;">
+              <p id="flashcard-set-title" class="flashcard-set-title"></p>
+              <button type="button" id="flashcard-close-btn" class="roster-toggle-button">Close Deck</button>
+            </div>
             <button type="button" id="flashcard" class="flashcard">
               <span id="flashcard-content"></span>
             </button>
@@ -340,6 +330,18 @@
               <button type="button" id="flashcard-prev">Previous</button>
               <button type="button" id="flashcard-next">Next</button>
             </div>
+          </div>
+
+          <!-- SUB-TABS FILTER BAR -->
+          <div class="sub-tabs-bar" id="study-sub-tabs">
+            <button type="button" class="sub-tab-btn active" data-filter="all">All Sets (<span id="count-all">0</span>)</button>
+            <button type="button" class="sub-tab-btn" data-filter="classroom">Classroom Assignments (<span id="count-classroom">0</span>)</button>
+            <button type="button" class="sub-tab-btn" data-filter="saved">My Saved Sets (<span id="count-saved">0</span>)</button>
+            <button type="button" class="sub-tab-btn" data-filter="favorite">Favorites (<span id="count-favorite">0</span>)</button>
+          </div>
+          
+          <div id="student-my-sets-container">
+            <ul id="student-my-sets-list" class="classroom-list"></ul>
           </div>
         </section>
 
@@ -356,15 +358,17 @@
             <div class="practice-status-line">
               <span id="practice-progress-text"></span>
               <span id="practice-score-text"></span>
+              <button type="button" id="practice-end-early-btn" class="classroom-delete-button" style="padding: 2px 8px; font-size: 0.75rem;">End Practice</button>
             </div>
             <p class="question-term" id="practice-term"></p>
             <div id="practice-choices" class="choice-grid"></div>
           </div>
 
           <div id="practice-summary" class="practice-summary hidden">
-            <h3>Practice Complete</h3>
+            <h3>Practice Summary</h3>
             <p id="practice-summary-text"></p>
             <button type="button" id="practice-restart-button">Practice Again</button>
+            <button type="button" id="practice-choose-set-button" class="tab-redirect-btn" style="margin-left: 8px;">Choose Another Set</button>
           </div>
         </section>
 

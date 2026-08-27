@@ -186,7 +186,7 @@ router.put("/sets/:id", requireAuth, requireProfessor, async (req, res) => {
   }
 });
 
-router.delete("/sets/:id", requireAuth, requireProfessor, async (req, res) => {
+router.delete("/sets/:id", requireAuth, async (req, res) => {
   let setId = req.params.id;
 
   try {
@@ -395,7 +395,7 @@ router.get("/public-sets/:id", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/public-sets/:id/copy", requireAuth, requireProfessor, async (req, res) => {
+router.post("/public-sets/:id/copy", requireAuth, async (req, res) => {
   let setId = req.params.id;
 
   try {

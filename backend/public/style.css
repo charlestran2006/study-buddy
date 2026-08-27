@@ -269,6 +269,81 @@ body {
   margin-top: 10px;
 }
 
+/* Sub-Tabs Bar & Section Dividers */
+.sub-tabs-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.sub-tab-btn {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sub-tab-btn:hover {
+  background: var(--bg-muted);
+  color: var(--text-main);
+  border-color: #cbd5e1;
+}
+
+.sub-tab-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 10px;
+}
+
+.section-divider:first-child {
+  margin-top: 4px;
+}
+
+.section-divider-title {
+  font-size: 0.925rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
+.section-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.classroom-group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 8px;
+  list-style: none;
+}
+
+.classroom-group-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #475569;
+  white-space: nowrap;
+}
+
+
 /* ==========================================================================
    Alerts & Notifications
    ========================================================================== */
@@ -605,18 +680,25 @@ body {
 }
 
 /* Action Buttons */
+.set-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
 .roster-toggle-button,
 .classroom-rename-button,
 .analytics-link-button {
-  margin-top: 8px;
-  padding: 4px 8px;
+  padding: 5px 10px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   background: #ffffff;
   color: #334155;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 600;
   transition: all 0.15s ease;
 }
@@ -628,17 +710,16 @@ body {
 }
 
 .favorite-toggle-button {
-  margin-top: 8px;
-  margin-left: 6px;
-  padding: 4px 8px;
+  padding: 5px 9px;
   border: 1px solid #fde68a;
   border-radius: var(--radius-sm);
   background: #fffbeb;
   color: #b45309;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 600;
+  line-height: 1;
 }
 
 .favorite-toggle-button:hover {
@@ -646,16 +727,14 @@ body {
 }
 
 .add-to-sets-button {
-  margin-top: 8px;
-  margin-left: 6px;
-  padding: 4px 8px;
+  padding: 5px 10px;
   border: 1px solid #a7f3d0;
   border-radius: var(--radius-sm);
   background: #ecfdf5;
   color: #047857;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
@@ -664,16 +743,14 @@ body {
 }
 
 .classroom-delete-button {
-  margin-top: 8px;
-  margin-left: 6px;
-  padding: 4px 8px;
+  padding: 5px 10px;
   border: 1px solid #fecaca;
   border-radius: var(--radius-sm);
   background: #fef2f2;
   color: #b91c1c;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 

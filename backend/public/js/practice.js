@@ -192,18 +192,43 @@ async function selectAnswer(button, choice, correctTerm) {
   if (index < order.length) {
     showQuestion();
   } else {
-    finishPractice();
+    finishPractice(false);
   }
 }
 
-function finishPractice() {
+function finishPractice(endedEarly = false) {
   quiz.classList.add("hidden");
   summary.classList.remove("hidden");
-  let pct = Math.round((correctCount / order.length) * 100);
-  summaryText.textContent = `You got ${correctCount} out of ${order.length} correct (${pct}%).`;
+
+  let answered = index;
+  if (endedEarly) {
+    if (answered === 0) {
+      summaryText.textContent = "Practice ended before answering any questions.";
+    } else {
+      let pct = Math.round((correctCount / answered) * 100);
+      summaryText.textContent = `Practice ended early. You answered ${correctCount} out of ${answered} question${answered === 1 ? "" : "s"} correctly (${pct}%).`;
+    }
+  } else {
+    let totalPct = Math.round((correctCount / order.length) * 100);
+    summaryText.textContent = `You completed all questions! Final score: ${correctCount} out of ${order.length} correct (${totalPct}%).`;
+  }
 }
 
-document.getElementById("practice-restart-button").addEventListener("click", () => {
+document.getElementById("practice-end-early-btn")?.addEventListener("click", () => {
+  if (index === 0 && correctCount === 0) {
+    quiz.classList.add("hidden");
+    selectForm.classList.remove("hidden");
+    return;
+  }
+  finishPractice(true);
+});
+
+document.getElementById("practice-restart-button")?.addEventListener("click", () => {
+  summary.classList.add("hidden");
+  startPracticeWithTerms(terms);
+});
+
+document.getElementById("practice-choose-set-button")?.addEventListener("click", () => {
   summary.classList.add("hidden");
   selectForm.classList.remove("hidden");
 });
