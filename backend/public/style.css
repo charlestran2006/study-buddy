@@ -479,6 +479,20 @@ body {
   transition: all 0.15s ease;
 }
 
+.role-option input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--primary);
+}
+
+.role-option-text {
+  position: relative;
+  top: 0.5px;
+  line-height: 1;
+}
+
 .role-option:hover {
   border-color: var(--border-color-hover);
   background: var(--bg-muted);
