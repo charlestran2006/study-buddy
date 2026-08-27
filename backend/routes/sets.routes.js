@@ -185,13 +185,16 @@ router.get("/public-sets", requireAuth, async (req, res) => {
   try {
     let result = await pool.query(
       `SELECT s.id, s.title, s.description, s.created_at, u.username AS professor_username,
-              COUNT(t.id)::int AS term_count
+              COUNT(DISTINCT t.id)::int AS term_count,
+              COUNT(f.id) > 0 AS is_favorited
        FROM sets s
        JOIN users u ON u.id = s.user_id
        LEFT JOIN terms t ON t.set_id = s.id
+       LEFT JOIN favorites f ON f.set_id = s.id AND f.user_id = $1
        WHERE s.is_public = TRUE
        GROUP BY s.id, u.username
-       ORDER BY s.created_at DESC`
+       ORDER BY s.created_at DESC`,
+      [req.session.userId]
     );
 
     res.status(200).json(result.rows);

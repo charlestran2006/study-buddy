@@ -8,6 +8,7 @@ let setsRoutes = require("./routes/sets.routes");
 let assignmentsRoutes = require("./routes/assignments.routes");
 let gamesRoutes = require("./routes/games.routes");
 let studyRoutes = require("./routes/study.routes");
+let favoritesRoutes = require("./routes/favorites.routes");
 
 let app = express();
 
@@ -41,6 +42,7 @@ app.use(classroomsRoutes);
 app.use(setsRoutes);
 app.use(assignmentsRoutes);
 app.use(gamesRoutes);
+app.use(favoritesRoutes);
 
 app.sessionMiddleware = sessionMiddleware;
 module.exports = app;

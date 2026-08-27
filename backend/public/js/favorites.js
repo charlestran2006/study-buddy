@@ -1,26 +1,25 @@
 import { apiRequest } from "./api.js";
 import { setStudentDashboardMessage, escapeHtml } from "./dom.js";
-import { registerStudentDashboardLoader } from "./auth.js";
 import { showFlashcards } from "./flashcards.js";
 
-let publicSetList = document.getElementById("public-set-list");
+let favoriteSetList = document.getElementById("favorite-set-list");
 
-registerStudentDashboardLoader(loadPublicSets);
+document.querySelector('#student-tabs [data-target="panel-stu-favorites"]').addEventListener("click", loadFavorites);
 
-async function loadPublicSets() {
+async function loadFavorites() {
   try {
-    let sets = await apiRequest("/public-sets");
-    renderPublicSets(sets);
+    let sets = await apiRequest("/favorites");
+    renderFavorites(sets);
   } catch (err) {
     setStudentDashboardMessage(err.message);
   }
 }
 
-function renderPublicSets(sets) {
-  publicSetList.innerHTML = "";
+function renderFavorites(sets) {
+  favoriteSetList.innerHTML = "";
 
   if (sets.length === 0) {
-    publicSetList.innerHTML = '<li class="empty-state">No public study sets yet.</li>';
+    favoriteSetList.innerHTML = '<li class="empty-state">You haven\'t favorited any public sets yet.</li>';
     return;
   }
 
@@ -34,7 +33,7 @@ function renderPublicSets(sets) {
         ${set.term_count} term${set.term_count === 1 ? "" : "s"}
       </div>
       <button type="button" class="roster-toggle-button">Study</button>
-      <button type="button" class="favorite-toggle-button">${set.is_favorited ? "★ Favorited" : "☆ Favorite"}</button>
+      <button type="button" class="favorite-toggle-button">★ Favorited</button>
     `;
 
     item.querySelector(".roster-toggle-button").addEventListener("click", async (event) => {
@@ -52,26 +51,22 @@ function renderPublicSets(sets) {
       }
     });
 
-    let favoriteButton = item.querySelector(".favorite-toggle-button");
-    favoriteButton.addEventListener("click", async () => {
-      favoriteButton.disabled = true;
+    item.querySelector(".favorite-toggle-button").addEventListener("click", async (event) => {
+      let button = event.target;
+      button.disabled = true;
 
       try {
-        if (set.is_favorited) {
-          await apiRequest(`/favorites/${set.id}`, { method: "DELETE" });
-          set.is_favorited = false;
-        } else {
-          await apiRequest("/favorites", { method: "POST", body: JSON.stringify({ set_id: set.id }) });
-          set.is_favorited = true;
+        await apiRequest(`/favorites/${set.id}`, { method: "DELETE" });
+        item.remove();
+        if (favoriteSetList.children.length === 0) {
+          renderFavorites([]);
         }
-        favoriteButton.textContent = set.is_favorited ? "★ Favorited" : "☆ Favorite";
       } catch (err) {
         setStudentDashboardMessage(err.message);
-      } finally {
-        favoriteButton.disabled = false;
+        button.disabled = false;
       }
     });
 
-    publicSetList.appendChild(item);
+    favoriteSetList.appendChild(item);
   });
 }
