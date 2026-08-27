@@ -6,6 +6,7 @@ import "./classrooms.js";
 import "./sets.js";
 import "./assignments.js";
 import "./flashcards.js";
+import "./public-sets.js";
 import "./analytics.js";
 import "./professor-game.js";
 import "./student-game.js";

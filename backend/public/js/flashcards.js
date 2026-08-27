@@ -40,17 +40,22 @@ document.getElementById("study-select-form").addEventListener("submit", async (e
 
   try {
     let studySet = await apiRequest(`/api/classrooms/${classroomId}/assignment`);
-    terms = studySet.terms;
-    index = 0;
-    showingDefinition = false;
-    setTitle.textContent = studySet.title;
-    viewer.classList.remove("hidden");
-    renderCard();
+    showFlashcards(studySet.title, studySet.terms);
   } catch (err) {
     viewer.classList.add("hidden");
     setStudentDashboardMessage(err.message);
   }
 });
+
+export function showFlashcards(title, termsList) {
+  terms = termsList;
+  index = 0;
+  showingDefinition = false;
+  setTitle.textContent = title;
+  viewer.classList.remove("hidden");
+  viewer.scrollIntoView({ behavior: "smooth", block: "start" });
+  renderCard();
+}
 
 function renderCard() {
   let term = terms[index];
