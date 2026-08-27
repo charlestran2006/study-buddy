@@ -703,9 +703,15 @@ body {
 
 .set-item {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.set-edit-container {
+  flex-basis: 100%;
+  width: 100%;
 }
 
 .set-item .set-name {

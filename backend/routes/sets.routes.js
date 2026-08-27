@@ -75,6 +75,111 @@ router.get("/sets", requireAuth, requireProfessor, (req, res) => {
   );
 });
 
+router.get("/sets/:id", requireAuth, requireProfessor, async (req, res) => {
+  let setId = req.params.id;
+
+  try {
+    let setResult = await pool.query(
+      "SELECT id, title, description, is_public, created_at FROM sets WHERE id = $1 AND user_id = $2",
+      [setId, req.session.userId]
+    );
+
+    if (setResult.rows.length === 0) {
+      res.status(404).json({ error: "study set not found" });
+      return;
+    }
+
+    let termsResult = await pool.query(
+      "SELECT id, term, definition, position FROM terms WHERE set_id = $1 ORDER BY position ASC",
+      [setId]
+    );
+
+    res.status(200).json({ ...setResult.rows[0], terms: termsResult.rows });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "something went wrong" });
+  }
+});
+
+router.put("/sets/:id", requireAuth, requireProfessor, async (req, res) => {
+  let setId = req.params.id;
+  let title = req.body.title;
+  let description = req.body.description || null;
+  let terms = req.body.terms;
+  let isPublic = Boolean(req.body.is_public);
+
+  if (!title || !Array.isArray(terms) || terms.length === 0) {
+    res.status(400).json({ error: "missing fields" });
+    return;
+  }
+
+  for (let t of terms) {
+    if (!t.term || !t.definition) {
+      res.status(400).json({ error: "each term needs a term and definition" });
+      return;
+    }
+  }
+
+  try {
+    let ownedResult = await pool.query(
+      "SELECT id FROM sets WHERE id = $1 AND user_id = $2",
+      [setId, req.session.userId]
+    );
+
+    if (ownedResult.rows.length === 0) {
+      res.status(404).json({ error: "study set not found" });
+      return;
+    }
+
+    await pool.query(
+      "UPDATE sets SET title = $1, description = $2, is_public = $3 WHERE id = $4",
+      [title, description, isPublic, setId]
+    );
+
+    let existingResult = await pool.query("SELECT id FROM terms WHERE set_id = $1", [setId]);
+    let existingIds = new Set(existingResult.rows.map((row) => row.id));
+    let keptIds = new Set();
+
+    for (let i = 0; i < terms.length; i++) {
+      let t = terms[i];
+
+      if (t.id && existingIds.has(t.id)) {
+        await pool.query(
+          "UPDATE terms SET term = $1, definition = $2, position = $3 WHERE id = $4",
+          [t.term, t.definition, i, t.id]
+        );
+        keptIds.add(t.id);
+      } else {
+        await pool.query(
+          "INSERT INTO terms (set_id, term, definition, position) VALUES ($1, $2, $3, $4)",
+          [setId, t.term, t.definition, i]
+        );
+      }
+    }
+
+    let skippedDeletions = [];
+
+    for (let id of existingIds) {
+      if (keptIds.has(id)) continue;
+
+      try {
+        await pool.query("DELETE FROM terms WHERE id = $1", [id]);
+      } catch (err) {
+        if (err.code === "23503") {
+          skippedDeletions.push(id);
+        } else {
+          throw err;
+        }
+      }
+    }
+
+    res.status(200).json({ ok: true, skipped_deletions: skippedDeletions });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "something went wrong" });
+  }
+});
+
 router.get("/sets/:id/games", requireAuth, requireProfessor, async (req, res) => {
   let setId = req.params.id;
 
