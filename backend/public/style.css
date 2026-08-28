@@ -59,10 +59,6 @@ body {
   display: none !important;
 }
 
-/* ==========================================================================
-   Logo & Typography
-   ========================================================================== */
-
 .logo {
   margin: 0;
   font-size: 1.35rem;
@@ -71,17 +67,12 @@ body {
   color: var(--primary);
 }
 
-/* ==========================================================================
-   App Layout (Sidebar + Main Content)
-   ========================================================================== */
-
 .app-layout {
   display: flex;
   min-height: 100vh;
   width: 100%;
 }
 
-/* LEFT SIDEBAR */
 .app-sidebar {
   width: 250px;
   flex-shrink: 0;
@@ -99,7 +90,6 @@ body {
   padding: 0 6px;
 }
 
-/* SIDEBAR VERTICAL NAV */
 .sidebar-nav {
   display: flex;
   flex-direction: column;
@@ -135,7 +125,6 @@ body {
   font-weight: 700;
 }
 
-/* SIDEBAR FOOTER & USER */
 .sidebar-footer {
   margin-top: auto;
   padding-top: 14px;
@@ -180,10 +169,6 @@ body {
   color: #b91c1c;
 }
 
-/* ==========================================================================
-   Main Content Area
-   ========================================================================== */
-
 .app-main-content {
   flex: 1;
   display: flex;
@@ -215,7 +200,6 @@ body {
   margin: 0 auto;
 }
 
-/* PANELS */
 .panel {
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
@@ -232,7 +216,6 @@ body {
   color: var(--text-main);
 }
 
-/* 2-COLUMN GRID (ELIMINATES WASTED SPACE) */
 .panel-grid-2col {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -269,7 +252,6 @@ body {
   margin-top: 10px;
 }
 
-/* Sub-Tabs Bar & Section Dividers */
 .sub-tabs-bar {
   display: flex;
   gap: 8px;
@@ -343,22 +325,21 @@ body {
   white-space: nowrap;
 }
 
-
-/* ==========================================================================
-   Alerts & Notifications
-   ========================================================================== */
-
 .message {
   display: none;
-  margin: 14px 28px 0;
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  font-size: 0.875rem;
-  font-weight: 600;
+  position: relative;
+  margin: 16px 28px 0;
+  padding: 14px 20px;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 700;
   text-align: center;
   background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #b91c1c;
+  border: 2px solid #f87171;
+  color: #991b1b;
+  box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.15), 0 8px 10px -6px rgba(239, 68, 68, 0.1);
+  animation: slideDownNotification 0.25s ease-out forwards;
+  z-index: 100;
 }
 
 .message:not(:empty) {
@@ -367,13 +348,21 @@ body {
 
 .message.success {
   background: #ecfdf5;
-  border-color: #a7f3d0;
-  color: #047857;
+  border-color: #34d399;
+  color: #065f46;
+  box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.15), 0 8px 10px -6px rgba(16, 185, 129, 0.1);
 }
 
-/* ==========================================================================
-   Auth Screen
-   ========================================================================== */
+@keyframes slideDownNotification {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 #auth-view {
   position: relative;
@@ -449,7 +438,6 @@ body {
   margin: 0 0 20px;
 }
 
-/* Segmented Tabs on Auth */
 .auth-card .tabs {
   display: flex;
   background: var(--bg-muted);
@@ -481,7 +469,6 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-/* Forms */
 .auth-form,
 .panel-form {
   display: flex;
@@ -499,7 +486,9 @@ body {
 .auth-form input,
 .panel-form input,
 .panel-form textarea,
-.panel-form select {
+.panel-form select,
+#game-join-code,
+#join-code {
   width: 100%;
   padding: 8px 12px;
   margin-bottom: 12px;
@@ -510,6 +499,19 @@ body {
   font-size: 0.9rem;
   color: var(--text-main);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#game-join-code,
+#join-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 1.5rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 4px !important;
+  text-align: center;
+  color: #312e81 !important;
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%) !important;
+  border: 2px solid #6366f1 !important;
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
 }
 
 .auth-form input:focus,
@@ -596,7 +598,6 @@ body {
   margin: 0;
 }
 
-/* Submit Buttons */
 .auth-form button[type="submit"],
 .panel-form button[type="submit"] {
   padding: 9px 16px;
@@ -622,10 +623,6 @@ body {
   opacity: 0.6;
   cursor: not-allowed;
 }
-
-/* ==========================================================================
-   Classrooms & Set Lists
-   ========================================================================== */
 
 .classroom-list {
   list-style: none;
@@ -669,17 +666,18 @@ body {
 }
 
 .join-code {
-  font-family: ui-monospace, monospace;
-  background: #e0e7ff;
-  color: #4338ca;
-  border: 1px solid #c7d2fe;
-  padding: 1px 5px;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  background: #4f46e5;
+  color: #ffffff;
+  border: 1px solid #4338ca;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
   font-weight: 700;
+  letter-spacing: 1.5px;
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
 }
 
-/* Action Buttons */
 .set-actions {
   display: flex;
   align-items: center;
@@ -758,7 +756,6 @@ body {
   background: #fee2e2;
 }
 
-/* Roster */
 .roster-list {
   list-style: none;
   margin: 10px 0 0;
@@ -806,7 +803,6 @@ body {
   font-weight: 600;
 }
 
-/* Empty State */
 .empty-state {
   padding: 24px 14px;
   text-align: center;
@@ -817,7 +813,6 @@ body {
   background: #fafafa;
 }
 
-/* Set Item Actions */
 .set-item {
   display: flex;
   flex-wrap: wrap;
@@ -841,7 +836,6 @@ body {
   flex-wrap: wrap;
 }
 
-/* Term Rows in Creator */
 .term-rows {
   display: flex;
   flex-direction: column;
@@ -884,10 +878,6 @@ body {
   font-size: 0.8rem;
   font-weight: 600;
 }
-
-/* ==========================================================================
-   Flashcards Viewer
-   ========================================================================== */
 
 .flashcard-viewer {
   margin-top: 18px;
@@ -960,10 +950,6 @@ body {
 .flashcard-controls button:hover {
   background: var(--bg-muted);
 }
-
-/* ==========================================================================
-   Practice Mode & Games
-   ========================================================================== */
 
 .practice-quiz {
   margin-top: 18px;
@@ -1063,10 +1049,6 @@ body {
   font-weight: 600;
   cursor: pointer;
 }
-
-/* ==========================================================================
-   Live Game & Podium
-   ========================================================================== */
 
 .game-live {
   margin-top: 18px;
@@ -1219,10 +1201,6 @@ body {
   font-weight: 800;
 }
 
-/* ==========================================================================
-   Analytics
-   ========================================================================== */
-
 .analytics-grid {
   padding: 20px;
   max-width: 1000px;
@@ -1271,10 +1249,6 @@ body {
 
 .heatmap-item .term-name { font-weight: 600; }
 .heatmap-item .term-stats { font-size: 0.8rem; color: var(--text-muted); }
-
-/* ==========================================================================
-   Utility & Controls
-   ========================================================================== */
 
 .mute-toggle {
   position: fixed;
