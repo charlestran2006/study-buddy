@@ -335,7 +335,33 @@ hostGameForm.addEventListener("submit", async (event) => {
     lastScores.clear();
     confettiFired = false;
     lastRenderedQuestionIndex = null;
-    setDashboardMessage(`Game created. Join code: ${game.join_code}`, true);
+
+    let messageEl = document.getElementById("dashboard-message");
+    if (messageEl) {
+      messageEl.className = "message success";
+      messageEl.innerHTML = `
+        Game created. Join code: <strong style="font-family: monospace; font-size: 1.1rem; margin: 0 6px;">${game.join_code}</strong>
+        <button id="copy-code-btn" type="button" style="margin-left: 10px; padding: 4px 10px; border: 1px solid #059669; border-radius: 4px; background: #059669; color: #ffffff; font-weight: 600; cursor: pointer; font-size: 0.85rem;">Copy Code</button>
+      `;
+
+      let copyBtn = document.getElementById("copy-code-btn");
+      if (copyBtn) {
+        copyBtn.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(game.join_code);
+            copyBtn.textContent = "Copied! ✓";
+            copyBtn.style.background = "#047857";
+            setTimeout(() => {
+              copyBtn.textContent = "Copy Code";
+              copyBtn.style.background = "#059669";
+            }, 2000);
+          } catch (err) {
+            console.error("Failed to copy text: ", err);
+          }
+        });
+      }
+    }
+
     connect(game.id);
   } catch (err) {
     setDashboardMessage(err.message);
