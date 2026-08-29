@@ -51,7 +51,6 @@ function renderPublicSets(sets) {
       try {
         let details = await apiRequest(`/public-sets/${set.id}`);
         showFlashcards(details.title, details.terms);
-        document.querySelector('#student-tabs [data-target="panel-stu-study"]')?.click();
       } catch (err) {
         setStudentDashboardMessage(err.message);
       } finally {

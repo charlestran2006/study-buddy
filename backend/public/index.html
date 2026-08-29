@@ -312,36 +312,77 @@
 
         <!-- MY STUDY SETS & FLASHCARDS PANEL -->
         <section class="panel hidden" id="panel-stu-study">
-          <h2>My Study Sets</h2>
-          <p style="color: var(--text-muted); font-size: 0.875rem; margin: -8px 0 16px;">
-            All card sets in your collection, including enrolled classroom assignments, personal sets, and saved favorites.
-          </p>
+          <!-- 1. COLLECTION LIST VIEW -->
+          <div id="study-collection-view">
+            <h2>My Study Sets</h2>
+            <p style="color: var(--text-muted); font-size: 0.875rem; margin: -8px 0 16px;">
+              All card sets in your collection, including enrolled classroom assignments, personal sets, and saved favorites.
+            </p>
 
-          <div id="flashcard-viewer" class="flashcard-viewer hidden">
-            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 500px;">
-              <p id="flashcard-set-title" class="flashcard-set-title"></p>
-              <button type="button" id="flashcard-close-btn" class="roster-toggle-button">Close Deck</button>
+            <!-- SUB-TABS FILTER BAR -->
+            <div class="sub-tabs-bar" id="study-sub-tabs">
+              <button type="button" class="sub-tab-btn active" data-filter="all">All Sets (<span id="count-all">0</span>)</button>
+              <button type="button" class="sub-tab-btn" data-filter="classroom">Classroom Assignments (<span id="count-classroom">0</span>)</button>
+              <button type="button" class="sub-tab-btn" data-filter="saved">My Saved Sets (<span id="count-saved">0</span>)</button>
+              <button type="button" class="sub-tab-btn" data-filter="favorite">Favorites (<span id="count-favorite">0</span>)</button>
             </div>
-            <button type="button" id="flashcard" class="flashcard">
-              <span id="flashcard-content"></span>
-            </button>
-            <p id="flashcard-counter" class="flashcard-counter"></p>
-            <div class="flashcard-controls">
-              <button type="button" id="flashcard-prev">Previous</button>
-              <button type="button" id="flashcard-next">Next</button>
+            
+            <div id="student-my-sets-container">
+              <ul id="student-my-sets-list" class="classroom-list"></ul>
             </div>
           </div>
 
-          <!-- SUB-TABS FILTER BAR -->
-          <div class="sub-tabs-bar" id="study-sub-tabs">
-            <button type="button" class="sub-tab-btn active" data-filter="all">All Sets (<span id="count-all">0</span>)</button>
-            <button type="button" class="sub-tab-btn" data-filter="classroom">Classroom Assignments (<span id="count-classroom">0</span>)</button>
-            <button type="button" class="sub-tab-btn" data-filter="saved">My Saved Sets (<span id="count-saved">0</span>)</button>
-            <button type="button" class="sub-tab-btn" data-filter="favorite">Favorites (<span id="count-favorite">0</span>)</button>
-          </div>
-          
-          <div id="student-my-sets-container">
-            <ul id="student-my-sets-list" class="classroom-list"></ul>
+          <!-- 2. DEDICATED STUDY DECK VIEW -->
+          <div id="flashcard-viewer" class="study-deck-view hidden">
+            <div class="study-deck-topbar">
+              <button type="button" id="flashcard-close-btn" class="study-back-btn">← Back to Sets</button>
+              <div class="study-header-center">
+                <h3 id="flashcard-set-title"></h3>
+                <span id="flashcard-deck-subtitle" class="study-deck-subtitle"></span>
+              </div>
+              <button type="button" id="flashcard-shuffle-btn" class="study-action-btn" title="Shuffle Deck">Shuffle</button>
+            </div>
+
+            <div class="study-progress-container">
+              <div class="study-progress-bar" id="flashcard-progress-bar"></div>
+            </div>
+            <div class="study-progress-info">
+              <span id="flashcard-counter"></span>
+              <span class="study-hint-keys">Press Space to flip &middot; &larr; &rarr; to navigate</span>
+            </div>
+
+            <!-- 3D Interactive Flip Card -->
+            <div class="flashcard-3d-wrapper" id="flashcard-wrapper" role="button" tabindex="0" aria-label="Flashcard - click or press Space to flip">
+              <div class="flashcard-3d-card" id="flashcard">
+                <div class="flashcard-face flashcard-front">
+                  <div class="flashcard-badge">TERM</div>
+                  <div class="flashcard-text" id="flashcard-term-text"></div>
+                  <div class="flashcard-click-hint">Click or press Space to flip</div>
+                </div>
+                <div class="flashcard-face flashcard-back">
+                  <div class="flashcard-badge flashcard-badge-def">DEFINITION</div>
+                  <div class="flashcard-text" id="flashcard-def-text"></div>
+                  <div class="flashcard-click-hint">Click or press Space to flip</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Navigation Controls -->
+            <div class="study-nav-controls" id="flashcard-nav-controls">
+              <button type="button" id="flashcard-prev" class="study-nav-btn">&larr; Previous</button>
+              <button type="button" id="flashcard-next" class="study-nav-btn">Next &rarr;</button>
+            </div>
+
+            <!-- Deck Complete Card -->
+            <div id="flashcard-complete-card" class="study-complete-card hidden">
+              <h3>Deck Completed!</h3>
+              <p id="flashcard-complete-text">You've reviewed all terms in this study deck.</p>
+              <div class="study-complete-actions">
+                <button type="button" id="flashcard-restart-btn" class="study-flip-btn">Study Again</button>
+                <button type="button" id="flashcard-shuffle-restart-btn" class="study-nav-btn">Shuffle & Restart</button>
+                <button type="button" id="flashcard-done-btn" class="study-nav-btn">&larr; Back to Sets</button>
+              </div>
+            </div>
           </div>
         </section>
 
