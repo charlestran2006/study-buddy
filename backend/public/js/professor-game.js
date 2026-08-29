@@ -2,7 +2,7 @@ import { submitForm } from "./api.js";
 import { setDashboardMessage, escapeHtml, animateNumber, playEntrance } from "./dom.js";
 import { registerLogoutCleanup } from "./auth.js";
 import { openAnalytics } from "./analytics.js";
-import { playSound } from "./sound.js";
+import { playSound, playRandomBGM, stopBGM } from "./sound.js";
 
 let hostGameForm = document.getElementById("host-game-form");
 let hostGameLive = document.getElementById("host-game-live");
@@ -43,6 +43,7 @@ const PODIUM_FIRST_DELAY_MS = 2000;
 
 registerLogoutCleanup(() => {
   closeSocket();
+  stopBGM();
   hostGameLive.classList.add("hidden");
   hostViewAnalyticsButton.classList.add("hidden");
   hostNextQuestionButton.classList.add("hidden");
@@ -72,9 +73,6 @@ function closeSocket() {
 }
 
 function scheduleReconnect() {
-  // The old connection's countdown timer is tied to a socket that no longer
-  // exists and would otherwise keep ticking and overwrite the status message
-  // below with a stale "Xs left" every 250ms.
   if (countdownInterval) {
     clearInterval(countdownInterval);
     countdownInterval = null;
@@ -169,10 +167,6 @@ function renderPodium(players) {
     },
   ];
 
-  // Unhide the podium container BEFORE touching any slot's animation classes:
-  // playEntrance()'s remove-reflow-readd cycle only resets a replayed
-  // animation correctly on an element that's actually laid out, not one
-  // still sitting inside a display:none ancestor.
   hostPodiumView.classList.remove("hidden");
 
   podiumSlots.forEach((slot, i) => {
@@ -242,6 +236,7 @@ function handleMessage(event) {
   }
 
   if (message.type === "question") {
+    playRandomBGM();
     hostStartGameButton.classList.add("hidden");
     hostLeaderboardView.classList.add("hidden");
     hostPodiumView.classList.add("hidden");
@@ -250,10 +245,6 @@ function handleMessage(event) {
     hostQuestionTerm.textContent = message.term;
     startCountdown(Date.now() + message.timeLimit);
 
-    // A reconnect resends the SAME in-progress question (server has no
-    // "reveal" state, so sendCurrentQuestion() just replays whatever is
-    // current). Only play the entrance animation for a genuinely new index,
-    // not a resend of content already on screen.
     if (message.index !== lastRenderedQuestionIndex) {
       lastRenderedQuestionIndex = message.index;
       playEntrance(hostQuestionView, ["animate__fadeInUp", "animate__faster"]);
@@ -266,6 +257,7 @@ function handleMessage(event) {
       clearInterval(countdownInterval);
       countdownInterval = null;
     }
+    stopBGM();
     hostQuestionMeta.classList.remove("timer-urgent");
     hostQuestionMeta.textContent = "Answer revealed — click Next Question to continue.";
     hostPodiumView.classList.add("hidden");
@@ -276,6 +268,7 @@ function handleMessage(event) {
   }
 
   if (message.type === "game_over") {
+    stopBGM();
     hostQuestionView.classList.add("hidden");
     hostStartGameButton.classList.add("hidden");
     hostNextQuestionButton.classList.add("hidden");
