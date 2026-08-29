@@ -6,12 +6,29 @@ const SOUND_FILES = {
   tick: "sounds/tick.wav",
 };
 
+const BGM_FILES = [
+  "sounds/Carefree.mp3",
+  "sounds/Duck.mp3",
+  "sounds/Moneys.mp3",
+  "sounds/TheBuilder.mp3"
+];
+
 let audioCache = {};
+let bgmCache = [];
+let currentBgm = null;
 
 Object.entries(SOUND_FILES).forEach(([name, src]) => {
   let audio = new Audio(src);
   audio.preload = "auto";
   audioCache[name] = audio;
+});
+
+BGM_FILES.forEach((src) => {
+  let audio = new Audio(src);
+  audio.preload = "auto";
+  audio.loop = true;
+  audio.volume = 0.35;
+  bgmCache.push(audio);
 });
 
 let params = new URLSearchParams(location.search);
@@ -29,11 +46,27 @@ export function playSound(name) {
   let base = audioCache[name];
   if (!base) return;
 
-  // Clone so rapid/overlapping plays (e.g. quick clicks) don't cut each
-  // other off. The clone reuses the already-preloaded resource.
   let instance = base.cloneNode();
   instance.volume = 0.6;
   instance.play().catch(() => {});
+}
+
+export function playRandomBGM() {
+  stopBGM();
+  if (muted || bgmCache.length === 0) return;
+
+  let randomIndex = Math.floor(Math.random() * bgmCache.length);
+  currentBgm = bgmCache[randomIndex];
+  currentBgm.currentTime = 0;
+  currentBgm.play().catch(() => {});
+}
+
+export function stopBGM() {
+  if (currentBgm) {
+    currentBgm.pause();
+    currentBgm.currentTime = 0;
+    currentBgm = null;
+  }
 }
 
 export function isMuted() {
@@ -56,6 +89,12 @@ if (muteButton) {
     muted = !muted;
     updateMuteButton();
     syncMuteQueryParam();
-    if (!muted) playSound("click");
+    
+    if (muted) {
+      if (currentBgm) currentBgm.pause();
+    } else {
+      playSound("click");
+      if (currentBgm) currentBgm.play().catch(() => {});
+    }
   });
 }
