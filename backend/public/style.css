@@ -740,7 +740,6 @@ body {
   background: #d1fae5;
 }
 
-/* Red Styled Action Button (e.g. End Game / Return buttons matching primary style) */
 #host-end-game-button {
   padding: 9px 16px;
   border: none;
@@ -1131,6 +1130,13 @@ body {
   border: 1px solid var(--border-color);
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+#player-leaderboard-list li:nth-child(even), 
+#host-leaderboard-list li:nth-child(even),
+#host-player-list li:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
 }
 
 .leaderboard-list .rank {
