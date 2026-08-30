@@ -153,3 +153,16 @@ async function logout() {
 
 document.getElementById("logout-button").addEventListener("click", logout);
 document.getElementById("student-logout-button").addEventListener("click", logout);
+
+(async () => {
+  try {
+    let user = await apiRequest("/me");
+    if (user.role === "professor") {
+      showProfessorDashboard(user);
+    } else {
+      showStudentDashboard(user);
+    }
+  } catch (err) {
+    // not logged in -- leave the login screen showing
+  }
+})();

@@ -1206,6 +1206,14 @@ body {
   border: 1px solid var(--border-color);
 }
 
+.answer-progress {
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 4px;
+}
+
 .choice-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -1478,7 +1486,7 @@ body {
 
 .mute-toggle {
   position: fixed;
-  top: 12px;
+  bottom: 14px;
   right: 14px;
   z-index: 1000;
   padding: 4px 10px;

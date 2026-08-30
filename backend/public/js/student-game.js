@@ -63,6 +63,7 @@ let gamePlayPanel = document.getElementById("player-game-live");
 let gameStatus = document.getElementById("player-game-status");
 let gameQuestionView = document.getElementById("player-question-view");
 let gameTermEl = document.getElementById("player-question-term");
+let gameAnswerProgress = document.getElementById("player-answer-progress");
 let gameChoices = document.getElementById("player-choices");
 let gamePointsView = document.getElementById("player-points-view");
 let gamePointsValue = document.getElementById("player-points-value");
@@ -244,6 +245,12 @@ function renderPodium(players) {
   }
 }
 
+function updateAnswerProgress(answeredCount, playerCount) {
+  if (typeof answeredCount !== "number" || typeof playerCount !== "number") return;
+  gameAnswerProgress.textContent = `${answeredCount} / ${playerCount} answered`;
+  gameAnswerProgress.classList.remove("hidden");
+}
+
 function startCountdown(deadline) {
   if (countdownInterval) clearInterval(countdownInterval);
   lastTickSecond = null;
@@ -358,6 +365,7 @@ function handleMessage(event) {
     lastQuestionChoices = message.choices;
     renderChoices(message.choices);
     startCountdown(Date.now() + message.timeLimit);
+    updateAnswerProgress(message.answeredCount, message.playerCount);
 
     if (message.index !== lastRenderedQuestionIndex) {
       // A reconnect resends "question" for the question already in progress -- only
@@ -366,6 +374,11 @@ function handleMessage(event) {
       playRandomBGM();
       playEntrance(gameQuestionView, ["animate__fadeInUp", "animate__faster"]);
     }
+    return;
+  }
+
+  if (message.type === "answer_progress") {
+    updateAnswerProgress(message.answeredCount, message.playerCount);
     return;
   }
 
@@ -394,6 +407,7 @@ function handleMessage(event) {
     gamePointsView.classList.add("hidden");
     gameLeaderboardView.classList.add("hidden");
     gamePodiumView.classList.add("hidden");
+    gameAnswerProgress.classList.add("hidden");
     renderRevealChoices(message.correctIndex);
     gameQuestionView.classList.remove("hidden");
 
@@ -403,6 +417,7 @@ function handleMessage(event) {
       gameQuestionView.classList.add("hidden");
       renderWsLeaderboard(leaderboard, gameLeaderboardList);
       gameLeaderboardView.classList.remove("hidden");
+      playSound("whoosh");
     }, 2500);
     return;
   }
@@ -411,6 +426,7 @@ function handleMessage(event) {
     clearRevealTimer();
     stopBGM();
     gameQuestionView.classList.add("hidden");
+    gameAnswerProgress.classList.add("hidden");
     gamePointsView.classList.add("hidden");
     gameLeaderboardView.classList.add("hidden");
     gameStatus.textContent = "Game over!";

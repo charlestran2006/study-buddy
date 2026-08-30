@@ -93,6 +93,7 @@ class GameRoom {
     );
     this.sendCurrentQuestion(ws);
     this.broadcastPlayers();
+    this.broadcastAnswerProgress();
   }
 
   sendCurrentQuestion(ws) {
@@ -110,6 +111,8 @@ class GameRoom {
         term: question.term,
         choices: question.choices.map((c) => c.definition),
         timeLimit: remaining,
+        answeredCount: this.answers.size,
+        playerCount: this.players.size,
       })
     );
   }
@@ -123,6 +126,7 @@ class GameRoom {
       }
     }
     this.broadcastPlayers();
+    this.broadcastAnswerProgress();
   }
 
   playerList() {
@@ -145,6 +149,17 @@ class GameRoom {
 
   broadcastPlayers() {
     this.broadcast({ type: "players_update", players: this.playerList() });
+  }
+
+  broadcastAnswerProgress() {
+    if (this.status !== "in_progress") return;
+    if (this.currentIndex < 0 || this.currentIndex >= this.questions.length) return;
+
+    this.broadcast({
+      type: "answer_progress",
+      answeredCount: this.answers.size,
+      playerCount: this.players.size,
+    });
   }
 
   async startGame(terms) {
@@ -206,6 +221,8 @@ class GameRoom {
       term: question.term,
       choices: question.choices.map((c) => c.definition),
       timeLimit: QUESTION_TIME_MS,
+      answeredCount: this.answers.size,
+      playerCount: this.players.size,
     });
 
     this.timer = setTimeout(() => this.revealAnswer(), QUESTION_TIME_MS);
@@ -225,6 +242,7 @@ class GameRoom {
 
     let answeredAt = Date.now();
     this.answers.set(userId, { choiceIndex, answeredAt });
+    this.broadcastAnswerProgress();
 
     let isCorrect = choiceIndex === question.correctIndex;
     let elapsed = answeredAt - this.questionStartedAt;

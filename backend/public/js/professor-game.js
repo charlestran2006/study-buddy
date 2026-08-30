@@ -12,6 +12,7 @@ let hostPlayerList = document.getElementById("host-player-list");
 let hostQuestionView = document.getElementById("host-question-view");
 let hostQuestionTerm = document.getElementById("host-question-term");
 let hostQuestionMeta = document.getElementById("host-question-meta");
+let hostAnswerProgress = document.getElementById("host-answer-progress");
 let hostLeaderboardView = document.getElementById("host-leaderboard-view");
 let hostLeaderboardList = document.getElementById("host-leaderboard-list");
 let hostNextQuestionButton = document.getElementById("host-next-question-button");
@@ -198,6 +199,12 @@ function renderPodium(players) {
   }
 }
 
+function updateAnswerProgress(answeredCount, playerCount) {
+  if (typeof answeredCount !== "number" || typeof playerCount !== "number") return;
+  hostAnswerProgress.textContent = `${answeredCount} / ${playerCount} answered`;
+  hostAnswerProgress.classList.remove("hidden");
+}
+
 function startCountdown(deadline) {
   if (countdownInterval) clearInterval(countdownInterval);
   lastTickSecond = null;
@@ -243,6 +250,7 @@ function handleMessage(event) {
     hostQuestionView.classList.remove("hidden");
     hostQuestionTerm.textContent = message.term;
     startCountdown(Date.now() + message.timeLimit);
+    updateAnswerProgress(message.answeredCount, message.playerCount);
 
     if (message.index !== lastRenderedQuestionIndex) {
       // A reconnect resends "question" for the question already in progress -- only
@@ -254,6 +262,11 @@ function handleMessage(event) {
     return;
   }
 
+  if (message.type === "answer_progress") {
+    updateAnswerProgress(message.answeredCount, message.playerCount);
+    return;
+  }
+
   if (message.type === "reveal") {
     if (countdownInterval) {
       clearInterval(countdownInterval);
@@ -262,16 +275,19 @@ function handleMessage(event) {
     stopBGM();
     hostQuestionMeta.classList.remove("timer-urgent");
     hostQuestionMeta.textContent = "Answer revealed — click Next Question to continue.";
+    hostAnswerProgress.classList.add("hidden");
     hostPodiumView.classList.add("hidden");
     renderWsLeaderboard(message.leaderboard, hostLeaderboardList);
     hostLeaderboardView.classList.remove("hidden");
     hostNextQuestionButton.classList.remove("hidden");
+    playSound("whoosh");
     return;
   }
 
   if (message.type === "game_over") {
     stopBGM();
     hostQuestionView.classList.add("hidden");
+    hostAnswerProgress.classList.add("hidden");
     hostStartGameButton.classList.add("hidden");
     hostNextQuestionButton.classList.add("hidden");
     hostLeaderboardView.classList.add("hidden");
