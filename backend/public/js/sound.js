@@ -10,12 +10,14 @@ const BGM_FILES = [
   "sounds/Carefree.mp3",
   "sounds/Duck.mp3",
   "sounds/Moneys.mp3",
-  "sounds/TheBuilder.mp3"
+  "sounds/TheBuilder.mp3",
+  "sounds/wallpaper.mp3"
 ];
 
 let audioCache = {};
 let bgmCache = [];
 let currentBgm = null;
+let lastBgmIndex = null;
 
 Object.entries(SOUND_FILES).forEach(([name, src]) => {
   let audio = new Audio(src);
@@ -56,6 +58,13 @@ export function playRandomBGM() {
   if (muted || bgmCache.length === 0) return;
 
   let randomIndex = Math.floor(Math.random() * bgmCache.length);
+  // Avoid picking the same track twice in a row when more than one is available,
+  // otherwise a repeat looks (and sounds) like the track never got replaced.
+  while (bgmCache.length > 1 && randomIndex === lastBgmIndex) {
+    randomIndex = Math.floor(Math.random() * bgmCache.length);
+  }
+  lastBgmIndex = randomIndex;
+
   currentBgm = bgmCache[randomIndex];
   currentBgm.currentTime = 0;
   currentBgm.play().catch(() => {});

@@ -350,7 +350,6 @@ function handleMessage(event) {
 
   if (message.type === "question") {
     clearRevealTimer();
-    playRandomBGM();
     gameLeaderboardView.classList.add("hidden");
     gamePointsView.classList.add("hidden");
     gamePodiumView.classList.add("hidden");
@@ -361,7 +360,10 @@ function handleMessage(event) {
     startCountdown(Date.now() + message.timeLimit);
 
     if (message.index !== lastRenderedQuestionIndex) {
+      // A reconnect resends "question" for the question already in progress -- only
+      // treat this as a genuinely new question (and only then swap the BGM track).
       lastRenderedQuestionIndex = message.index;
+      playRandomBGM();
       playEntrance(gameQuestionView, ["animate__fadeInUp", "animate__faster"]);
     }
     return;
