@@ -4,6 +4,7 @@ const SOUND_FILES = {
   incorrect: "sounds/incorrect.wav",
   ready: "sounds/ready.wav",
   tick: "sounds/tick.wav",
+  whoosh: "sounds/whoosh.mp3",
 };
 
 const BGM_FILES = [
